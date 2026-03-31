@@ -1,5 +1,5 @@
 # PRD — Nexora
-**Versão:** 1.0
+**Versão:** 1.1
 **Data:** 2026-03-30
 **Status:** Draft
 **Owner:** Product Team
@@ -97,6 +97,136 @@ A **IA Sentimental** é a camada de inteligência emocional do Nexora — analis
 - `cold` — Risco de perda, reengajamento necessário
 - `resistant` — Objeção ativa, acionar Closer agent
 - `ready` — Sinal de compra, acionar fechamento imediato
+
+---
+
+## 3.4 Módulo de Extração
+
+O **Módulo de Extração** é o braço de prospecção ativa do Nexora — coleta leads diretamente de fontes públicas e semipúblicas antes que o prospect entre no radar da concorrência.
+
+### Fontes de Extração
+
+| Fonte | Actor / Ferramenta | Dados extraídos |
+|-------|-------------------|----------------|
+| **Google Maps** | `apify/google-maps-scraper` | Empresa, telefone, endereço, categoria, avaliações, site, horários |
+| **Instagram** | `apify/instagram-scraper` | Perfil, bio, contatos, hashtags, seguidores, engajamento |
+| **LinkedIn** | `apify/linkedin-profile-scraper` + `phantombuster/linkedin-search-export` | Nome, cargo, empresa, URL de perfil, email (quando público), conexões em comum, histórico de emprego, skills |
+| **CNAEs públicos** | Script próprio (Receita Federal API) | CNPJ, razão social, CNAE, porte, endereço, situação cadastral |
+
+### Estratégia LinkedIn (não-negociável para B2B)
+
+SDRs B2B operam primariamente no LinkedIn. O Módulo de Extração trata LinkedIn como **canal de primeira classe**, com duas ferramentas complementares:
+
+| Ferramenta | Uso | Limitação |
+|-----------|-----|-----------|
+| **Apify `linkedin-profile-scraper`** | Scraping de perfis públicos em escala | Requer LinkedIn session cookie |
+| **PhantomBuster `LinkedIn Search Export`** | Exportação de buscas com filtros avançados (cargo, empresa, localização, conexões) | Limite de quota por conta |
+
+**Dados capturados por contato:**
+- Nome completo, cargo, empresa atual, URL do perfil
+- Headline e summary do perfil
+- Skills declaradas
+- Grau de conexão (1º, 2º, 3º) com o rep
+- Email (quando disponível no perfil público)
+- Histórico de empregos recentes (detecção de job change)
+
+**LinkedIn Message Intelligence:**
+- Threads de mensagens LinkedIn sincronizadas via Apify/PhantomBuster
+- Análise de sentimento de cada mensagem inbound
+- Tone Advisor integrado ao composer de InMail/DM
+- Signal detectado quando prospect responde → Sniper Score sobe automaticamente
+
+### Fluxo de Extração
+
+```
+ICP Builder → Definir filtros (cargo, empresa, cidade, CNAE, hashtag, conexões)
+    → Escolher fonte: Google Maps | Instagram | LinkedIn | CNAEs
+    → Apify Actor / PhantomBuster executa
+    → Resultados parseados e deduplicados (por CNPJ, domínio, LinkedIn URL)
+    → Companies + Contacts criados com source=apify_* | phantombuster_linkedin
+    → Sniper Score inicial calculado
+    → Leads entram no Signal Feed
+    → Agente Scout prioriza e envia para Hit List
+```
+
+### Funcionalidades
+
+- **Extraction Hub:** Painel de runs com status, progresso e resultados
+- **Deduplicação inteligente:** Cruza CNPJ, domínio e telefone para evitar duplicatas
+- **Enriquecimento cascata:** Após extração do Google Maps, busca Instagram e CNAE automaticamente
+- **Filtros por CNAE:** Seleciona segmentos específicos da base pública da Receita Federal
+- **Rate limiting:** Respeita limites do Apify para não estourar quota
+- **Agendamento:** Extrações recorrentes configuráveis (semanal, mensal)
+
+### Requisitos técnicos
+
+- Integração via Apify API (Actor calls assíncronos com polling)
+- Tabela `extraction_runs` para auditoria de cada run
+- Tabela `cnae_codes` com base completa da classificação brasileira
+- Campos `source`, `apify_run_id`, `cnae_code`, `cnpj` em `companies` e `contacts`
+- Edge Function `enrichment-worker` orquestra o pipeline de extração
+
+---
+
+## 3.5 Posicionamento & Kill Shot
+
+> **"Nexora: O CRM que caça leads enquanto o HubSpot apenas os guarda."**
+
+### Por que esse posicionamento funciona no B2B
+
+O comprador B2B SMB sente exatamente essa dor: tem um CRM cheio de dados estáticos, mas a equipe ainda prospecta manualmente no Google. O kill shot nomeia o inimigo (HubSpot/Salesforce = passivos) e posiciona Nexora como **ativo e autônomo** — um time de vendas que trabalha 24/7.
+
+### Messaging por persona
+
+| Persona | Mensagem |
+|---------|---------|
+| **VP de Vendas** | "Aumente 30% a produtividade do seu time de SDRs no primeiro mês — sem contratar mais headcount." |
+| **SDR** | "Pare de perder tempo no Google. A Hit List do Nexora te diz exatamente quem ligar hoje e por quê." |
+| **CEO/Founder** | "Seu CRM atual guarda contatos. O Nexora gera receita." |
+
+### Diferenciais vs. concorrência
+
+| Critério | Nexora | HubSpot | Salesforce |
+|----------|--------|---------|------------|
+| Prospecção ativa (Apify) | ✅ Nativo | ❌ | ❌ |
+| Sniper Score em tempo real | ✅ | ❌ | ❌ Partial |
+| IA Sentimental | ✅ | ❌ | ❌ |
+| Agentes autônomos | ✅ | ❌ | ❌ Einstein limitado |
+| Extração por CNAE | ✅ | ❌ | ❌ |
+| Curva de adoção | < 24h | 2–6 semanas | 3–6 meses |
+| Preço (entrada) | $29/seat | $45/seat | $75/seat |
+
+---
+
+## 3.6 ROI Projetado
+
+### Premissas (time de 5 SDRs)
+
+| Métrica | Antes do Nexora | Com Nexora (Mês 1) | Variação |
+|---------|----------------|---------------------|---------|
+| Tempo em admin/prospecção manual | 40% do dia | 25% do dia | -37% |
+| Contatos prospectados/dia/SDR | 30 | 50 | +67% |
+| Taxa de resposta | 8% | 12% | +50% |
+| Deals gerados/mês | 15 | 22 | +47% |
+| **Produtividade geral de SDRs** | baseline | **+30%** | **+30%** |
+
+### Como o Nexora entrega os 30%
+
+1. **Hit List diária (-15min/dia/rep):** Elimina a decisão de "por quem começo" — SDR começa o dia com lista pronta e ação sugerida
+2. **Extração Apify (+20 novos leads/dia):** Prospectando Google Maps e Instagram enquanto o rep dorme
+3. **Tone Advisor (-20% emails reescritos):** Primeira versão do email já no tom certo — menos revisões, mais envios
+4. **Sniper Score (-35% deals frios no pipeline):** SDR foca nos leads quentes, não distribui energia igualmente
+
+### ROI financeiro estimado (5 SDRs, plano Growth $79/seat)
+
+```
+Custo Nexora:    5 × $79 = $395/mês
+Ganho estimado:  +7 deals/mês × ticket médio $500 = $3.500 MRR adicional
+ROI Mês 1:       $3.500 / $395 = 8.9x
+Payback:         < 4 dias
+```
+
+> *Projeções conservadoras baseadas em benchmarks de mercado (Gartner Sales Technology, 2024). Resultados individuais variam conforme ICP, mercado e execução.*
 
 ---
 
