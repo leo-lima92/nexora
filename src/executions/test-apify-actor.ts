@@ -14,7 +14,7 @@
  *   npx tsx --env-file=.env src/executions/test-apify-actor.ts
  */
 
-import { getApifyClient, ApifyError } from '../services/apify-client.ts';
+import { getApifyClient, ApifyError } from '../services/apify-client.js';
 
 // Nota: `apify/hello-world` não grava em dataset (hasNoDataset=true) — escreve só
 // em KeyValueStore. Para validar getAllDatasetItems() com dados reais e exercitar

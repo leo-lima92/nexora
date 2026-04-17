@@ -10,7 +10,7 @@
  *   npx tsx --env-file=.env src/executions/test-apify-errors.ts
  */
 
-import { getApifyClient, ApifyError } from '../services/apify-client.ts';
+import { getApifyClient, ApifyError } from '../services/apify-client.js';
 
 const FAKE_RUN_ID = 'does-not-exist-NEXORA-TEST';
 

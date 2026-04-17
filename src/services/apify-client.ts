@@ -78,7 +78,7 @@ export class ApifyClient {
   private readonly token: string;
 
   constructor(token?: string) {
-    const resolved = token ?? process.env.APIFY_API_TOKEN;
+    const resolved = token ?? process.env['APIFY_API_TOKEN'];
     if (!resolved) {
       throw new ApifyError('APIFY_API_TOKEN is not set. Add it to your .env file.');
     }
@@ -226,11 +226,14 @@ export class ApifyClient {
       }
     }
 
-    const response = await fetch(url.toString(), {
+    const init: RequestInit = {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: options.body ? JSON.stringify(options.body) : undefined,
-    });
+    };
+    if (options.body !== undefined) {
+      init.body = JSON.stringify(options.body);
+    }
+    const response = await fetch(url.toString(), init);
 
     // Retry on 429 and 503
     if ((response.status === 429 || response.status === 503) && attempt <= MAX_RETRIES) {

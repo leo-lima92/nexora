@@ -14,7 +14,7 @@
  *   npx tsx --env-file=.env src/executions/test-apify.ts
  */
 
-import { ApifyClient, ApifyError } from '../services/apify-client.ts';
+import { ApifyClient, ApifyError } from '../services/apify-client.js';
 
 const APIFY_ME_URL = 'https://api.apify.com/v2/users/me';
 
@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   console.log('─'.repeat(60));
 
   // 1. Env resolution
-  const tokenPresent = Boolean(process.env.APIFY_API_TOKEN);
+  const tokenPresent = Boolean(process.env['APIFY_API_TOKEN']);
   console.log(`[1/3] APIFY_API_TOKEN presente no env: ${tokenPresent ? 'OK' : 'AUSENTE'}`);
   if (!tokenPresent) {
     console.error('   → Certifique-se de rodar com --env-file=.env');
@@ -53,7 +53,7 @@ async function main(): Promise<void> {
   }
 
   // 3. Live API check via /users/me
-  const token = process.env.APIFY_API_TOKEN!;
+  const token = process.env['APIFY_API_TOKEN']!;
   const start = Date.now();
   try {
     const response = await fetch(`${APIFY_ME_URL}?token=${encodeURIComponent(token)}`);
