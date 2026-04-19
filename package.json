@@ -1,0 +1,33 @@
+{
+  "name": "nexora",
+  "version": "0.1.0",
+  "description": "Nexora CRM Agêntico — backend services (Apify extraction, Supabase data layer, agent orchestration).",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo \"lint: not configured yet\" && exit 0",
+    "test": "echo \"test: not configured yet\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leo-lima92/nexora.git"
+  },
+  "bugs": {
+    "url": "https://github.com/leo-lima92/nexora/issues"
+  },
+  "homepage": "https://github.com/leo-lima92/nexora#readme",
+  "author": "leo-lima92 <leonardolimadossantos1992@gmail.com>",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^6.0.3"
+  }
+}

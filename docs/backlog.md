@@ -52,8 +52,8 @@
 
 ---
 
-#### E-02.02 — Extraction Run Model (DB Layer)
-**Status:** `Backlog`
+#### E-02.02 — Extraction Run Model (DB Layer) ✅ CONCLUÍDA (2026-04-19)
+**Status:** `Concluído`
 **Prioridade:** P0
 **Estimativa:** 2 pts
 
@@ -62,13 +62,23 @@
 **Para** criar, atualizar e consultar runs de extração com tipagem gerada pelo Supabase.
 
 **Critérios de Aceite:**
-- [ ] `createRun(payload)` insere registro com status `pending`
-- [ ] `updateRunStatus(runId, status, meta)` atualiza status + timestamps
-- [ ] `getRunById(id)` retorna run com tipagem completa
-- [ ] `listRunsByOrg(orgId, filters)` lista runs paginados
-- [ ] Tipagem 100% derivada de `src/types/database.ts` (sem tipos manuais)
+- [x] `createRun(payload)` insere registro com status `pending`
+- [x] `updateRunStatus(runId, status, meta)` atualiza status + timestamps
+- [x] `getRunById(id)` retorna run com tipagem completa
+- [x] `listRunsByOrg(orgId, filters)` lista runs paginados
+- [x] Tipagem 100% derivada de `src/types/database.ts` (sem tipos manuais)
 
 **Arquivo alvo:** `src/services/extraction-run.service.ts`
+
+**Evidências:**
+- `src/lib/supabase.ts` — clients `supabase` (ANON) e `supabaseAdmin` (SERVICE_ROLE) com guardrails
+- `src/services/extraction-run.service.ts` — `createRun`, `updateRunStatus`, `getRunById`, `listRunsByOrg` com carimbo automático de `started_at` / `completed_at` e scoping por `org_id`
+- `src/executions/test-extraction-run.ts` — ciclo de vida ponta-a-ponta validado contra Supabase real (pending → running → succeeded, getRunById, listRunsByOrg, scoping cross-org)
+- `supabase/migrations/20260419000000_update_extraction_runs_constraints.sql` — expande CHECK constraints (`status ∈ {pending, running, completed, succeeded, failed, aborted}`; `source` aceita apelidos curtos e prefixados por provider) — aplicada via `supabase db push`
+
+**Decisões arquiteturais:**
+1. Divergência semântica entre service (status: `succeeded`/`aborted`) e migration inicial (`completed` apenas) resolvida via Opção B — DB alinhado ao código (semântica rica preservada, valores legados mantidos).
+2. DROP de constraints feito idempotentemente com `DO $$ ... EXCEPTION WHEN undefined_object` para permitir reexecução segura da migration.
 
 ---
 
@@ -204,6 +214,7 @@
 | Supabase Realtime habilitado para `extraction_runs` | ⚠️ Pendente | E-02.06 |
 | `src/services/apify-client.ts` esqueleto | ✅ Criado | — |
 | `src/services/apify-client.ts` validado end-to-end | ✅ Concluído (E-02.01) | — |
+| `src/services/extraction-run.service.ts` + DB layer validados | ✅ Concluído (E-02.02, 2026-04-19) | — |
 
 ---
 
