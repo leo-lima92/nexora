@@ -117,6 +117,66 @@ function wrap(op: string, error: PostgrestError, ctx: Record<string, unknown> = 
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Concurrency guard
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ACTIVE_STATUSES: readonly ExtractionStatus[] = ['pending', 'running'];
+
+/**
+ * Thrown when a caller tries to start a new extraction run while another
+ * run for the same (org_id, source) pair is still pending/running.
+ * Protects against accidental concurrent scraping (billing + data integrity).
+ */
+export class ActiveRunConflictError extends ExtractionRunServiceError {
+  constructor(
+    public readonly orgId: string,
+    public readonly source: ExtractionSource,
+    public readonly activeRunId: string,
+  ) {
+    super(
+      `[extraction-run.assertNoActiveRun] org=${orgId} já tem run ativa (id=${activeRunId}) para source=${source}`,
+      undefined,
+      { orgId, source, activeRunId },
+    );
+    this.name = 'ActiveRunConflictError';
+  }
+}
+
+/**
+ * Rejects if there is already a pending/running run for (orgId, source).
+ * Call this BEFORE createRun() to enforce "max 1 active run per org per source".
+ *
+ * Note: this is a best-effort check via SELECT, not a true lock. Under highly
+ * concurrent load, two callers can both see "no active run" and both insert.
+ * For bulletproof guarantees, layer a postgres advisory lock on top.
+ */
+export async function assertNoActiveRun(
+  orgId: string,
+  source: ExtractionSource,
+): Promise<void> {
+  if (!orgId) {
+    throw new ExtractionRunServiceError('[extraction-run.assertNoActiveRun] orgId is required');
+  }
+  if (!source) {
+    throw new ExtractionRunServiceError('[extraction-run.assertNoActiveRun] source is required');
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('extraction_runs')
+    .select('id')
+    .eq('org_id', orgId)
+    .eq('source', source)
+    .in('status', [...ACTIVE_STATUSES])
+    .limit(1)
+    .maybeSingle();
+
+  if (error) wrap('assertNoActiveRun', error, { orgId, source });
+  if (data) {
+    throw new ActiveRunConflictError(orgId, source, data.id);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // createRun
 // ─────────────────────────────────────────────────────────────────────────────
 

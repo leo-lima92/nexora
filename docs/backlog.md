@@ -119,6 +119,44 @@
 
 ---
 
+#### E-02.03b — Google Maps Mapper + Dedup + Rate Limit ✅ CONCLUÍDA (2026-04-19)
+**Status:** `Concluído`
+**Prioridade:** P0
+**Estimativa:** 3 pts
+**Depende de:** E-02.03
+
+**Como** sistema,
+**Quero** transformar os `GoogleMapsPlace` crus em `companies`/`contacts` deduplicados
+**Para** que o Extraction Hub não crie empresas duplicadas e respeite 1 run ativa por org.
+
+**Critérios de Aceite:**
+- [x] Migration adiciona `companies.google_place_id VARCHAR(255)` + UNIQUE INDEX scopado por `(org_id, google_place_id)` (partial `WHERE IS NOT NULL`)
+- [x] Mapper persiste 1:1 place → company (`name`, `domain`, `website`, `city`, `country`, `tags`)
+- [x] Dedup SKIP por `(org_id, google_place_id)` — run repetida conta como `companiesSkipped`, não tenta UPSERT
+- [x] Contact criado apenas quando `phoneUnformatted` (ou fallback `phone`) não-vazio; FK via `company_id`
+- [x] Agregadores de URL (linktr.ee, bit.ly, t.co, goo.gl, tinyurl, lnk.bio, beacons.ai) descartados do `domain` canônico — resolve edge case real da E-02.03
+- [x] Concurrency guard (`assertNoActiveRun`) via SELECT em `extraction_runs` com status `∈ {pending, running}` para `(org_id, source)` — rejeita com `ActiveRunConflictError`
+- [x] Orquestrador passa a popular `companies_created` e `contacts_created` reais no `updateRunStatus(succeeded)`; `rawData` ganha bloco `mapping` para auditoria
+
+**Arquivos alvo:**
+- `src/services/google-maps-mapper.service.ts` (novo)
+- `src/services/google-maps-extractor.service.ts` (integração + guard + counters reais)
+- `src/services/extraction-run.service.ts` (adiciona `assertNoActiveRun` + `ActiveRunConflictError`)
+- `supabase/migrations/20260419010000_add_tracking_columns_to_companies.sql`
+
+**Decisões arquiteturais:**
+1. Dedup SKIP (não UPSERT) — diretriz explícita do PM; counter `companies_created` reflete apenas rows novas.
+2. `assertNoActiveRun` é best-effort via SELECT, não lock real. Sob alta concorrência, race condition teórica existe — upgrade para `pg_advisory_xact_lock` quando escalar além de 1 worker.
+3. `apify_run_id` já existia em `companies`/`contacts` desde a migration inicial — só adicionamos indexes auxiliares.
+4. Types regenerados via `supabase gen types typescript --linked` (2341 linhas) para manter tipagem 100% derivada do DB.
+
+**Fora de escopo (deferido):**
+- Fallback de dedup por `website`/`phoneUnformatted` — `placeId` é fonte única da verdade nesta iteração
+- Advisory lock Postgres para concurrency bulletproof
+- Mapping de `categoryName` → `cnae_code` (requer tabela de tradução)
+
+---
+
 #### E-02.04 — LinkedIn Profile Extractor
 **Status:** `Backlog`
 **Prioridade:** P1

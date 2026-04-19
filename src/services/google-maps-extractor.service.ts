@@ -25,10 +25,15 @@ import {
   type ApifyRun,
 } from './apify-client.js';
 import {
+  assertNoActiveRun,
   createRun,
   updateRunStatus,
   type ExtractionRunRow,
 } from './extraction-run.service.js';
+import {
+  mapGoogleMapsResults,
+  type MapGoogleMapsResult,
+} from './google-maps-mapper.service.js';
 import type { Json } from '../types/database.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -79,6 +84,8 @@ export interface ExtractGoogleMapsInput {
 export interface ExtractGoogleMapsResult {
   run: ExtractionRunRow;
   items: GoogleMapsPlace[];
+  /** Resumo do mapping — presente quando a extração chega a succeeded. */
+  mapping: MapGoogleMapsResult;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -95,6 +102,9 @@ export async function extractGoogleMaps(
   input: ExtractGoogleMapsInput,
 ): Promise<ExtractGoogleMapsResult> {
   validateInput(input);
+
+  // [0] Concurrency guard — rejeita se já existe run ativa pra (org, source).
+  await assertNoActiveRun(input.orgId, 'google_maps');
 
   // [A] Insere a run em pending.
   const pending = await createRun({
@@ -120,15 +130,25 @@ export async function extractGoogleMaps(
     );
     const durationMs = Date.now() - start;
 
+    // [D.5] Mapping: persiste em `companies`/`contacts` com dedup SKIP.
+    const mapping = await mapGoogleMapsResults({
+      orgId: input.orgId,
+      apifyRunId: apifyRun.id,
+      places: items,
+      createdBy: input.createdBy ?? null,
+    });
+
     // [E] Marca sucesso com counters + apifyRunId + rawData sintético.
     const finalRun = await updateRunStatus(pending.id, {
       status: 'succeeded',
       apifyRunId: apifyRun.id,
       resultsCount: items.length,
-      rawData: buildRawData(apifyRun, items.length, durationMs),
+      companiesCreated: mapping.companiesCreated,
+      contactsCreated: mapping.contactsCreated,
+      rawData: buildRawData(apifyRun, items.length, durationMs, mapping),
     });
 
-    return { run: finalRun, items };
+    return { run: finalRun, items, mapping };
   } catch (err) {
     // [F] Marca failed preservando a mensagem — re-throw para o caller decidir.
     //     Se o próprio update falhar (DB off), logamos mas não mascaramos o erro raiz.
@@ -174,7 +194,12 @@ function buildActorInput(input: ExtractGoogleMapsInput): Record<string, unknown>
   return actorInput;
 }
 
-function buildRawData(apifyRun: ApifyRun, itemCount: number, durationMs: number): Json {
+function buildRawData(
+  apifyRun: ApifyRun,
+  itemCount: number,
+  durationMs: number,
+  mapping: MapGoogleMapsResult,
+): Json {
   const raw: { [key: string]: Json | undefined } = {
     actorId: GOOGLE_MAPS_ACTOR_ID,
     apifyRunId: apifyRun.id,
@@ -187,6 +212,12 @@ function buildRawData(apifyRun: ApifyRun, itemCount: number, durationMs: number)
       inputBodyLen: apifyRun.stats.inputBodyLen,
       restartCount: apifyRun.stats.restartCount,
       durationMillis: apifyRun.stats.durationMillis,
+    },
+    mapping: {
+      companiesCreated: mapping.companiesCreated,
+      companiesSkipped: mapping.companiesSkipped,
+      contactsCreated: mapping.contactsCreated,
+      errorCount: mapping.errors.length,
     },
   };
   return raw;
