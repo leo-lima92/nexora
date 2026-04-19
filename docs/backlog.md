@@ -82,8 +82,8 @@
 
 ---
 
-#### E-02.03 — Google Maps Extractor
-**Status:** `Backlog`
+#### E-02.03 — Google Maps Extractor (Orquestração) ✅ CONCLUÍDA (2026-04-19)
+**Status:** `Concluído (orquestração) · mapping/dedup deferido para E-02.03b`
 **Prioridade:** P0
 **Estimativa:** 5 pts
 
@@ -92,14 +92,30 @@
 **Para** gerar uma lista de prospectos locais qualificados sem pesquisa manual.
 
 **Critérios de Aceite:**
-- [ ] Actor `apify/google-maps-scraper` chamado com `searchString`, `country`, `maxResults`
-- [ ] Resultados mapeados para `Company` (nome, telefone, endereço, site, lat/lng, rating)
-- [ ] Deduplicação por domínio e telefone antes de inserir
-- [ ] `extraction_run` atualizado com `companies_created`, `contacts_created`, `results_count`
-- [ ] Erros de Actor salvos em `extraction_run.error_message`
-- [ ] Rate limiting: máx 1 run simultâneo por `org_id`
+- [x] Actor `compass/crawler-google-places` chamado com `searchStringsArray`, `countryCode`, `maxCrawledPlacesPerSearch`
+- [ ] Resultados mapeados para `Company` (nome, telefone, endereço, site, lat/lng, rating) — **E-02.03b**
+- [ ] Deduplicação por domínio e telefone antes de inserir — **E-02.03b**
+- [x] `extraction_run` atualizado com `companies_created`, `contacts_created`, `results_count` (counters populados; `results_count=3` no smoke)
+- [x] Erros de Actor salvos em `extraction_run.error_message` (catch global com normalização de `ApifyError`)
+- [ ] Rate limiting: máx 1 run simultâneo por `org_id` — **E-02.03b**
 
-**Arquivo alvo:** `src/services/extractors/google-maps.extractor.ts`
+**Arquivo alvo:** `src/services/google-maps-extractor.service.ts`
+
+**Evidências:**
+- `src/services/google-maps-extractor.service.ts` — `extractGoogleMaps({orgId, query, maxResults, ...})` com fluxo [A] createRun → [B] running → [C][D] runAndCollect → [E] succeeded → [F] failed em catch
+- `src/executions/test-google-maps-extractor.ts` — smoke live com `maxResults=3` e cleanup automático
+- Smoke run real (2026-04-19): 22.466ms end-to-end, 3/3 academias de Vila Velha/ES raspadas, persistência confirmada via `getRunById`
+
+**Decisões arquiteturais:**
+1. Assinatura com objeto-param (`ExtractGoogleMapsInput`) em vez de 3 args posicionais — consistente com `createRun(input)` do service layer.
+2. `[B]` (transição para `running`) movido para dentro do try/catch — falha aqui também cai no handler `failed`.
+3. `rawData` persiste metadados sintéticos do actor run (stats, timestamps, itemCount) — útil para auditoria; payload cru dos items NÃO é persistido para evitar explosão da coluna jsonb.
+4. `runAndCollect` consolida `runActor + waitForRun + getAllDatasetItems` em uma chamada — mantém o orchestrator enxuto.
+
+**Observações para E-02.03b (mapping) capturadas no smoke:**
+- Dedup primário por `placeId` (chave estável do Google); fallbacks: `phoneUnformatted` + domínio normalizado
+- Edge cases observados: `phone=""` (Smart Fit), `website=linktr.ee/...` (agregador, não domínio canônico), `categories[]` variando de 1 a 6 entradas
+- Campos ricos p/ sniper-score futuro: `totalScore`, `reviewsCount`, `imagesCount`, `openingHours`, `additionalInfo`
 
 ---
 
