@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo \"lint: not configured yet\" && exit 0",
+    "lint": "eslint src",
+    "security-check": "npm audit && eslint src",
     "test": "echo \"test: not configured yet\" && exit 0"
   },
   "repository": {
@@ -28,6 +29,9 @@
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "@typescript-eslint/parser": "^8.59.2",
+    "eslint": "^10.3.0",
+    "eslint-plugin-security": "^4.0.0",
     "typescript": "^6.0.3"
   }
 }
