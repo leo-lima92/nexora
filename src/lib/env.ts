@@ -46,6 +46,10 @@ const envSchema = z.object({
   AIOS_WEBHOOK_SECRET: nonEmpty('AIOS_WEBHOOK_SECRET'),
   META_CAPI_TOKEN: nonEmpty('META_CAPI_TOKEN'),
   META_PIXEL_ID: nonEmpty('META_PIXEL_ID'),
+
+  // ── HTTP server ─────────────────────────────────────────────────────────
+  // Opcional. Default 3000. `coerce` converte string do .env para number.
+  PORT: z.coerce.number().int().positive().default(3000),
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

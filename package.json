@@ -8,6 +8,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "dev": "tsx watch --env-file=.env src/server.ts",
+    "start": "node --env-file=.env dist/server.js",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src",
@@ -25,7 +27,9 @@
   "author": "leo-lima92 <leonardolimadossantos1992@gmail.com>",
   "license": "UNLICENSED",
   "dependencies": {
+    "@hono/node-server": "^2.0.1",
     "@supabase/supabase-js": "^2.103.3",
+    "hono": "^4.12.18",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -33,6 +37,7 @@
     "@typescript-eslint/parser": "^8.59.2",
     "eslint": "^10.3.0",
     "eslint-plugin-security": "^4.0.0",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.3"
   }
 }
