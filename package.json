@@ -25,7 +25,8 @@
   "author": "leo-lima92 <leonardolimadossantos1992@gmail.com>",
   "license": "UNLICENSED",
   "dependencies": {
-    "@supabase/supabase-js": "^2.103.3"
+    "@supabase/supabase-js": "^2.103.3",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

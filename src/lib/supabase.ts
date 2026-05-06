@@ -13,33 +13,21 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { env } from './env.js';
 import type { Database } from '../types/database.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Environment — fail fast if any required variable is missing
+// Environment — validated upstream by `env` (src/lib/env.ts, fail-fast no boot)
+// SECURITY_POLICIES.md §3: nenhum acesso direto a process.env aqui.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const SUPABASE_URL = process.env['SUPABASE_URL'];
-const SUPABASE_ANON_KEY = process.env['SUPABASE_ANON_KEY'];
-const SUPABASE_SERVICE_ROLE_KEY = process.env['SUPABASE_SERVICE_ROLE_KEY'];
-
-if (!SUPABASE_URL) {
-  throw new Error('[supabase] Missing environment variable: SUPABASE_URL');
-}
-if (!SUPABASE_ANON_KEY) {
-  throw new Error('[supabase] Missing environment variable: SUPABASE_ANON_KEY');
-}
-if (!SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('[supabase] Missing environment variable: SUPABASE_SERVICE_ROLE_KEY');
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public client (ANON key) — RLS-aware, safe to use anywhere
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const supabase: SupabaseClient<Database> = createClient<Database>(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
+  env.SUPABASE_URL,
+  env.SUPABASE_ANON_KEY,
   {
     auth: {
       persistSession: false,
@@ -82,8 +70,8 @@ export const supabase: SupabaseClient<Database> = createClient<Database>(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const supabaseAdmin: SupabaseClient<Database> = createClient<Database>(
-  SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE_KEY,
+  env.SUPABASE_URL,
+  env.SUPABASE_SERVICE_ROLE_KEY,
   {
     auth: {
       persistSession: false,
