@@ -121,14 +121,8 @@ async function main(): Promise<void> {
   console.log('Extraction Run Service — Lifecycle Test (Story E-02.02)');
   console.log(HR);
 
-  // 0. Env sanity
-  const haveUrl = Boolean(process.env['SUPABASE_URL']);
-  const haveServiceKey = Boolean(process.env['SUPABASE_SERVICE_ROLE_KEY']);
-  log('env', `SUPABASE_URL=${haveUrl ? 'OK' : 'MISSING'} SERVICE_ROLE_KEY=${haveServiceKey ? 'OK' : 'MISSING'}`);
-  if (!haveUrl || !haveServiceKey) {
-    console.error('→ Rode com: npx tsx --env-file=.env src/executions/test-extraction-run.ts');
-    process.exit(1);
-  }
+  // 0. Env já validado via cofre Zod no boot (src/lib/env.ts) — fail-fast upstream.
+  log('env', 'SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY validados pelo cofre Zod');
 
   const { orgId, createdByScript } = await resolveTestOrg();
   let createdRunId: string | null = null;

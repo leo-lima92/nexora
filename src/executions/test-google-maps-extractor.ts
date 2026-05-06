@@ -145,18 +145,8 @@ async function main(): Promise<void> {
   console.log(`query="${QUERY}"  maxResults=${MAX_RESULTS}`);
   console.log(HR);
 
-  // 0. Env sanity
-  const haveApify = Boolean(process.env['APIFY_API_TOKEN']);
-  const haveUrl = Boolean(process.env['SUPABASE_URL']);
-  const haveServiceKey = Boolean(process.env['SUPABASE_SERVICE_ROLE_KEY']);
-  log(
-    'env',
-    `SUPABASE_URL=${haveUrl ? 'OK' : 'MISSING'}  SERVICE_ROLE_KEY=${haveServiceKey ? 'OK' : 'MISSING'}  APIFY_API_TOKEN=${haveApify ? 'OK' : 'MISSING'}`,
-  );
-  if (!haveUrl || !haveServiceKey || !haveApify) {
-    console.error('→ Rode com: npx tsx --env-file=.env src/executions/test-google-maps-extractor.ts');
-    process.exit(1);
-  }
+  // 0. Env já validado via cofre Zod no boot (src/lib/env.ts) — fail-fast upstream.
+  log('env', 'SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY + APIFY_API_TOKEN validados pelo cofre Zod');
 
   const { orgId, createdByScript } = await resolveTestOrg();
   let runId: string | null = null;

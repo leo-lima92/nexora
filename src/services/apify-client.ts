@@ -7,6 +7,8 @@
  * with built-in retry, rate-limit handling, and structured logging.
  */
 
+import { env } from '../lib/env.js';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,11 +80,7 @@ export class ApifyClient {
   private readonly token: string;
 
   constructor(token?: string) {
-    const resolved = token ?? process.env['APIFY_API_TOKEN'];
-    if (!resolved) {
-      throw new ApifyError('APIFY_API_TOKEN is not set. Add it to your .env file.');
-    }
-    this.token = resolved;
+    this.token = token ?? env.APIFY_API_TOKEN;
   }
 
   // ─── Actor Execution ──────────────────────────────────────────────────────
