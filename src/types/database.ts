@@ -557,6 +557,7 @@ export type Database = {
           cnpj: string | null
           country: string | null
           created_at: string
+          deal_value: number | null
           description: string | null
           domain: string | null
           embedding: string | null
@@ -566,18 +567,24 @@ export type Database = {
           id: string
           industry: string | null
           is_deleted: boolean
+          lead_origin: string | null
           linkedin_company_id: string | null
           linkedin_employee_count: number | null
           linkedin_followers: number | null
           linkedin_scraped_at: string | null
           linkedin_url: string | null
           logo_url: string | null
+          meta_ad_id: string | null
+          meta_adset_id: string | null
+          meta_campaign_id: string | null
           name: string
           org_id: string
           owner_id: string | null
           size_range: string | null
           source: string | null
+          status: string | null
           tags: string[]
+          traffic_source: string | null
           updated_at: string
           website: string | null
         }
@@ -590,6 +597,7 @@ export type Database = {
           cnpj?: string | null
           country?: string | null
           created_at?: string
+          deal_value?: number | null
           description?: string | null
           domain?: string | null
           embedding?: string | null
@@ -599,18 +607,24 @@ export type Database = {
           id?: string
           industry?: string | null
           is_deleted?: boolean
+          lead_origin?: string | null
           linkedin_company_id?: string | null
           linkedin_employee_count?: number | null
           linkedin_followers?: number | null
           linkedin_scraped_at?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
           name: string
           org_id: string
           owner_id?: string | null
           size_range?: string | null
           source?: string | null
+          status?: string | null
           tags?: string[]
+          traffic_source?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -623,6 +637,7 @@ export type Database = {
           cnpj?: string | null
           country?: string | null
           created_at?: string
+          deal_value?: number | null
           description?: string | null
           domain?: string | null
           embedding?: string | null
@@ -632,18 +647,24 @@ export type Database = {
           id?: string
           industry?: string | null
           is_deleted?: boolean
+          lead_origin?: string | null
           linkedin_company_id?: string | null
           linkedin_employee_count?: number | null
           linkedin_followers?: number | null
           linkedin_scraped_at?: string | null
           linkedin_url?: string | null
           logo_url?: string | null
+          meta_ad_id?: string | null
+          meta_adset_id?: string | null
+          meta_campaign_id?: string | null
           name?: string
           org_id?: string
           owner_id?: string | null
           size_range?: string | null
           source?: string | null
+          status?: string | null
           tags?: string[]
+          traffic_source?: string | null
           updated_at?: string
           website?: string | null
         }
