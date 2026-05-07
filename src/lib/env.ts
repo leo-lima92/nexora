@@ -47,6 +47,11 @@ const envSchema = z.object({
   META_CAPI_TOKEN: nonEmpty('META_CAPI_TOKEN'),
   META_PIXEL_ID: nonEmpty('META_PIXEL_ID'),
 
+  // ── Outbound (CAPI Feedback Loop): autenticação do pull do AIOS Python ──
+  // Comando 3 — Torneira de Dados. AIOS Python pulla GET /api/outbound/conversions
+  // para buscar vendas fechadas e enviar eventos Purchase ao Meta CAPI.
+  AIOS_PULL_TOKEN: nonEmpty('AIOS_PULL_TOKEN'),
+
   // ── HTTP server ─────────────────────────────────────────────────────────
   // Opcional. Default 3000. `coerce` converte string do .env para number.
   PORT: z.coerce.number().int().positive().default(3000),

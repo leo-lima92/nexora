@@ -171,6 +171,83 @@ app.post('/api/webhooks/aios-lead', async (c) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/outbound/conversions — Torneira de Dados (CAPI Feedback Loop)
+//
+// Comando 3 — Closed Loop / Outbound. AIOS Python pulla este endpoint em
+// cadência configurada (15min default) e envia eventos Purchase para a
+// Conversions API do Meta. Endpoint READ-ONLY e idempotente — cursor (`since`)
+// é gerenciado pelo consumidor (AIOS); Nexora NÃO mantém estado de sync.
+//
+// Bounded context: credenciais Meta (CAPI token, Pixel ID) ficam só no AIOS.
+// Aqui validamos só o `AIOS_PULL_TOKEN` que autoriza o pull.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const conversionsQuerySchema = z.object({
+  org_id: z.string().uuid('org_id deve ser um UUID válido'),
+  since: z.iso.datetime({
+    offset: true,
+    message: 'since deve ser ISO 8601 com offset (ex: 2026-05-01T00:00:00Z)',
+  }),
+  // limit: query string sempre chega como string. coerce → number, default 100,
+  // max 500 para não permitir um pull abusivo de página única.
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(500, 'limit máximo é 500')
+    .default(100),
+});
+
+app.get('/api/outbound/conversions', async (c) => {
+  // ── 1. Auth: header Authorization deve igualar AIOS_PULL_TOKEN.
+  const authHeader = c.req.header('authorization');
+  if (authHeader !== env.AIOS_PULL_TOKEN) {
+    console.warn('[outbound-conversions] auth fail — header missing or mismatch');
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  // ── 2. Validação Zod dos query params.
+  const parsed = conversionsQuerySchema.safeParse(c.req.query());
+  if (!parsed.success) {
+    return c.json(
+      {
+        error: 'Bad Request',
+        details: parsed.error.issues.map((i) => ({
+          path: i.path.join('.'),
+          message: i.message,
+        })),
+      },
+      400,
+    );
+  }
+
+  const { org_id, since, limit } = parsed.data;
+
+  // ── 3. Query: companies fechadas (status='venda_fechada') desde o cursor,
+  //    ordenadas por updated_at ASC para o AIOS avançar o cursor sem pular
+  //    registros.
+  const { data, error } = await supabaseAdmin
+    .from('companies')
+    .select('id, deal_value, meta_campaign_id, meta_adset_id, meta_ad_id, updated_at')
+    .eq('org_id', org_id)
+    .eq('status', 'venda_fechada')
+    .gte('updated_at', since)
+    .order('updated_at', { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    console.error('[outbound-conversions] query failed:', error.message);
+    return c.json(
+      { error: 'Internal Server Error', details: error.message },
+      500,
+    );
+  }
+
+  const items = data ?? [];
+  return c.json({ items, count: items.length });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Boot
 // ─────────────────────────────────────────────────────────────────────────────
 
