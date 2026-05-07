@@ -84,8 +84,11 @@ app.post('/api/webhooks/aios-lead', async (c) => {
   // ── 1. Porteiro: auth via header (constant-time não é necessário aqui —
   //    Node string equality é suficiente para shared secret de 32 bytes;
   //    timing attack contra HMAC validador exigiria milhões de requests).
-  const authHeader = c.req.header('authorization') ?? c.req.header('x-aios-signature');
-  if (authHeader !== env.AIOS_WEBHOOK_SECRET) {
+  //    Aceita formato OAuth2 ("Bearer <token>") ou token cru — strip do prefixo
+  //    antes da comparação para interop com clientes padrão (AIOS Python usa Bearer).
+  const rawAuth = c.req.header('authorization') ?? c.req.header('x-aios-signature');
+  const token = rawAuth?.replace(/^Bearer\s+/i, '');
+  if (token !== env.AIOS_WEBHOOK_SECRET) {
     console.warn('[aios-lead] auth fail — header missing or mismatch');
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -200,8 +203,11 @@ const conversionsQuerySchema = z.object({
 
 app.get('/api/outbound/conversions', async (c) => {
   // ── 1. Auth: header Authorization deve igualar AIOS_PULL_TOKEN.
-  const authHeader = c.req.header('authorization');
-  if (authHeader !== env.AIOS_PULL_TOKEN) {
+  //    Aceita formato OAuth2 ("Bearer <token>") ou token cru — strip do prefixo
+  //    antes da comparação para interop com clientes padrão.
+  const rawAuth = c.req.header('authorization');
+  const token = rawAuth?.replace(/^Bearer\s+/i, '');
+  if (token !== env.AIOS_PULL_TOKEN) {
     console.warn('[outbound-conversions] auth fail — header missing or mismatch');
     return c.json({ error: 'Unauthorized' }, 401);
   }
