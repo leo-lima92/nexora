@@ -210,60 +210,47 @@ app.post('/api/webhooks/aios-lead', async (c) => {
 
   const payload: AiosLeadPayload = parsed.data;
 
-  // ── 3a. Insert em companies (rastreamento Meta).
-  const { data: company, error: companyError } = await supabaseAdmin
-    .from('companies')
-    .insert({
-      org_id: payload.org_id,
-      name: payload.lead_data.name,
-      lead_origin: payload.lead_origin,
-      traffic_source: payload.traffic_source,
-      meta_campaign_id: payload.meta_campaign_id,
-      meta_adset_id: payload.meta_adset_id,
-      meta_ad_id: payload.meta_ad_id,
-      status: 'novo',
-      source: 'manual',
-    })
-    .select('id')
-    .single();
-
-  if (companyError || !company) {
-    console.error('[aios-lead] companies insert failed:', companyError?.message);
-    return c.json(
-      { error: 'Internal Server Error', stage: 'companies_insert', details: companyError?.message },
-      500,
-    );
-  }
-
-  // ── 3b. Insert em contacts vinculado à company recém-criada.
+  // ── 3. Persistência atômica via RPC `rpc_upsert_lead` ──────────────────
+  // A RPC envelopa os 2 inserts (companies + contacts) numa transação PL/pgSQL.
+  // Falha em qualquer ponto faz ROLLBACK total — sem órfãos. Migrations:
+  //   supabase/migrations/20260509185804_create_rpc_upsert_lead.sql
+  //   supabase/migrations/20260509190753_fix_rpc_upsert_lead_nullable_params.sql
+  // p_last_name/p_phone/p_email são opcionais na função SQL (DEFAULT NULL) —
+  // omitir a propriedade aqui faz o PG aplicar NULL no valor.
   const { first, last } = splitName(payload.lead_data.name);
-  const { error: contactError } = await supabaseAdmin.from('contacts').insert({
-    org_id: payload.org_id,
-    company_id: company.id,
-    first_name: first,
-    last_name: last,
-    phone: payload.lead_data.phone ?? null,
-    email: payload.lead_data.email ?? null,
-    source: 'manual',
+  const { data: rpcRows, error: rpcError } = await supabaseAdmin.rpc('rpc_upsert_lead', {
+    p_org_id: payload.org_id,
+    p_name: payload.lead_data.name,
+    p_lead_origin: payload.lead_origin,
+    p_traffic_source: payload.traffic_source,
+    p_meta_campaign_id: payload.meta_campaign_id,
+    p_meta_adset_id: payload.meta_adset_id,
+    p_meta_ad_id: payload.meta_ad_id,
+    p_first_name: first,
+    ...(last !== null ? { p_last_name: last } : {}),
+    ...(payload.lead_data.phone ? { p_phone: payload.lead_data.phone } : {}),
+    ...(payload.lead_data.email ? { p_email: payload.lead_data.email } : {}),
   });
 
-  if (contactError) {
-    // ⚠ Sem transação atômica via supabase-js — company permanece como órfã.
-    // Retornamos 500 com o id pra observabilidade; cleanup vem em job futuro.
-    console.error('[aios-lead] contacts insert failed:', contactError.message, '— orphan company:', company.id);
+  if (rpcError) {
+    console.error('[aios-lead] rpc_upsert_lead failed:', rpcError.message);
     return c.json(
-      {
-        error: 'Internal Server Error',
-        stage: 'contacts_insert',
-        details: contactError.message,
-        orphan_company_id: company.id,
-      },
+      { error: 'Internal Server Error', stage: 'rpc_upsert_lead', details: rpcError.message },
       500,
     );
   }
 
-  // ── 4. Sucesso.
-  return c.json({ ok: true, company_id: company.id }, 201);
+  const row = rpcRows?.[0];
+  if (!row) {
+    console.error('[aios-lead] rpc_upsert_lead returned empty result');
+    return c.json(
+      { error: 'Internal Server Error', stage: 'rpc_upsert_lead', details: 'empty result' },
+      500,
+    );
+  }
+
+  // ── 4. Sucesso. Contrato HTTP preservado: { ok, company_id }.
+  return c.json({ ok: true, company_id: row.company_id }, 201);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
