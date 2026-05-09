@@ -14,8 +14,11 @@
  *   npm run build && node dist/server.js
  */
 
+import * as crypto from 'node:crypto';
+
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import type { Context, Next } from 'hono';
 import { z } from 'zod';
 
 import { env } from './lib/env.js';
@@ -76,19 +79,109 @@ function splitName(full: string): { first: string; last: string | null } {
   };
 }
 
+/**
+ * Comparação constant-time de tokens (shared secret).
+ *
+ * Hasheia ambos os lados com SHA-256 antes de chamar `timingSafeEqual` por dois motivos:
+ *   1. Garante buffers de mesmo tamanho (32 bytes) — `timingSafeEqual` exige isso e
+ *      lançar quando lengths divergem vazaria informação por timing.
+ *   2. Mesmo tokens de tamanhos diferentes geram digests do mesmo tamanho — eliminando
+ *      o canal lateral de length que um early-return ingênuo abriria.
+ *
+ * Retorna `false` para input vazio/ausente sem chegar à comparação criptográfica.
+ */
+function safeTokenEqual(input: string | undefined | null, secret: string): boolean {
+  if (typeof input !== 'string' || input.length === 0) return false;
+  const inputDigest = crypto.createHash('sha256').update(input).digest();
+  const secretDigest = crypto.createHash('sha256').update(secret).digest();
+  return crypto.timingSafeEqual(inputDigest, secretDigest);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rate Limit — fixed window, in-memory, escopo: GET /api/outbound/conversions
+//
+// Proteção contra abuso/loop infinito do consumidor (AIOS Python pulla a cada
+// 15min em operação normal; pico tolerável << 100 req/15min). In-memory cabe
+// para single-instance Hono atual; ao escalar p/ múltiplas instâncias trocar
+// por Redis/Upstash com mesma chave/janela.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const RATE_LIMIT_MAX = 100;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const RATE_LIMIT_GC_THRESHOLD = 5000;
+
+type RateBucket = { count: number; resetAt: number };
+
+const conversionsRateBuckets = new Map<string, RateBucket>();
+
+/**
+ * Chave de bucket: prefere IP do `x-forwarded-for` (definido pelo proxy upstream
+ * — Vercel/Cloudflare — e não falsificável pelo cliente quando o proxy está
+ * corretamente configurado). Fallback: hash truncado do token (16 hex chars
+ * são suficientes para particionar consumidores sem logar o secret bruto).
+ * Último recurso: bucket único `anon` — atende request sem proxy nem auth e
+ * mantém o limite ativo mesmo no pior cenário.
+ */
+function rateLimitKey(c: Context): string {
+  const xff = c.req.header('x-forwarded-for')?.split(',')[0]?.trim();
+  if (xff) return `ip:${xff}`;
+
+  const auth = c.req.header('authorization')?.replace(/^Bearer\s+/i, '');
+  if (auth) {
+    const tokenHash = crypto.createHash('sha256').update(auth).digest('hex').slice(0, 16);
+    return `tok:${tokenHash}`;
+  }
+
+  return 'anon';
+}
+
+/** Limpa buckets já expirados quando o Map cresce demais — evita leak em pico de IPs únicos. */
+function gcExpiredBuckets(now: number): void {
+  if (conversionsRateBuckets.size < RATE_LIMIT_GC_THRESHOLD) return;
+  for (const [key, bucket] of conversionsRateBuckets) {
+    if (bucket.resetAt <= now) conversionsRateBuckets.delete(key);
+  }
+}
+
+async function conversionsRateLimit(c: Context, next: Next): Promise<Response | void> {
+  const now = Date.now();
+  gcExpiredBuckets(now);
+
+  const key = rateLimitKey(c);
+  const bucket = conversionsRateBuckets.get(key);
+
+  if (!bucket || bucket.resetAt <= now) {
+    conversionsRateBuckets.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    await next();
+    return;
+  }
+
+  bucket.count += 1;
+  if (bucket.count > RATE_LIMIT_MAX) {
+    const retryAfter = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+    c.header('Retry-After', String(retryAfter));
+    console.warn(`[outbound-conversions] rate limit hit — key=${key} retry_after=${retryAfter}s`);
+    return c.json(
+      { error: 'Too Many Requests', retry_after_seconds: retryAfter },
+      429,
+    );
+  }
+
+  await next();
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/webhooks/aios-lead — Porta da Frente do Closed Loop
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.post('/api/webhooks/aios-lead', async (c) => {
-  // ── 1. Porteiro: auth via header (constant-time não é necessário aqui —
-  //    Node string equality é suficiente para shared secret de 32 bytes;
-  //    timing attack contra HMAC validador exigiria milhões de requests).
-  //    Aceita formato OAuth2 ("Bearer <token>") ou token cru — strip do prefixo
-  //    antes da comparação para interop com clientes padrão (AIOS Python usa Bearer).
+  // ── 1. Porteiro: auth via header com comparação constant-time (timingSafeEqual
+  //    sobre digests SHA-256). Aceita formato OAuth2 ("Bearer <token>") ou token cru
+  //    — strip do prefixo antes da comparação para interop com clientes padrão
+  //    (AIOS Python usa Bearer).
   const rawAuth = c.req.header('authorization') ?? c.req.header('x-aios-signature');
   const token = rawAuth?.replace(/^Bearer\s+/i, '');
-  if (token !== env.AIOS_WEBHOOK_SECRET) {
+  if (!safeTokenEqual(token, env.AIOS_WEBHOOK_SECRET)) {
     console.warn('[aios-lead] auth fail — header missing or mismatch');
     return c.json({ error: 'Unauthorized' }, 401);
   }
@@ -201,13 +294,13 @@ const conversionsQuerySchema = z.object({
     .default(100),
 });
 
-app.get('/api/outbound/conversions', async (c) => {
-  // ── 1. Auth: header Authorization deve igualar AIOS_PULL_TOKEN.
-  //    Aceita formato OAuth2 ("Bearer <token>") ou token cru — strip do prefixo
-  //    antes da comparação para interop com clientes padrão.
+app.get('/api/outbound/conversions', conversionsRateLimit, async (c) => {
+  // ── 1. Auth: header Authorization deve igualar AIOS_PULL_TOKEN, comparado em
+  //    constant-time (timingSafeEqual sobre digests SHA-256). Aceita "Bearer <token>"
+  //    ou token cru — strip do prefixo antes da comparação para interop.
   const rawAuth = c.req.header('authorization');
   const token = rawAuth?.replace(/^Bearer\s+/i, '');
-  if (token !== env.AIOS_PULL_TOKEN) {
+  if (!safeTokenEqual(token, env.AIOS_PULL_TOKEN)) {
     console.warn('[outbound-conversions] auth fail — header missing or mismatch');
     return c.json({ error: 'Unauthorized' }, 401);
   }
