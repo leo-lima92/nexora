@@ -52,6 +52,12 @@ const envSchema = z.object({
   // para buscar vendas fechadas e enviar eventos Purchase ao Meta CAPI.
   AIOS_PULL_TOKEN: nonEmpty('AIOS_PULL_TOKEN'),
 
+  // ── AI Studio (Agent Builder multi-tenant) ─────────────────────────────
+  // Chave da Anthropic Messages API. Consumida server-only pelo backend Hono
+  // ao acionar o SDK em nome dos agentes SDR criados pelo usuário (ai_agents).
+  // NUNCA exposta ao bundle browser (mesma disciplina da service_role, §3.4).
+  ANTHROPIC_API_KEY: nonEmpty('ANTHROPIC_API_KEY'),
+
   // ── HTTP server ─────────────────────────────────────────────────────────
   // Opcional. Default 3000. `coerce` converte string do .env para number.
   PORT: z.coerce.number().int().positive().default(3000),
