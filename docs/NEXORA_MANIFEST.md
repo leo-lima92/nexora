@@ -1,12 +1,34 @@
 # NEXORA — Manifest
 
-**Versão:** 1.1
-**Data:** 2026-06-15
+**Versão:** 1.2
+**Data:** 2026-08-08
 **Owners:** @pm (Morgan) — Visão & Produto · @architect (Aria) — Arquitetura & Regras de Ouro
 **Audiência:** Engenheiro Sênior externo (CTO) — sincronização de estado absoluto
-**Status:** Closed Loop em produção · CODE FREEZE ativo sobre rotas do Loop (desde 2026-05-07) · **AI Studio (Agent Builder Multi-tenant) — novo Bounded Context em design (Missão 1, desde 2026-06-15)**
+**Status:** Closed Loop em produção · CODE FREEZE ativo sobre rotas do Loop (desde 2026-05-07) · **AI Studio — infraestrutura de dados APLICADA em produção (Missão 1 concluída)** · ⏸️ **STANDBY ESTRATÉGICO ativo (desde 2026-08-08) — avaliação de chassi de CRM open-source pelo CEO + CTO. Nenhuma alteração de código autorizada.**
 
-> **Changelog v1.1 (2026-06-15):** direcionamento estratégico oficializado por CEO (Leonardo) + CTO — a camada de Inteligência migra de *agentes hardcoded* para o modelo **AI Studio**: o usuário final cria seus próprios SDRs dinamicamente, persistindo prompt de sistema, tom de voz e configurações no banco (multi-tenant por `org_id`). Ver nova §1.5. Schema em design (Missão 1, @data-engineer) — ainda **não aplicado** em produção.
+> **Changelog v1.2 (2026-08-08):** Missão 1 do AI Studio **concluída e homologada**. A migration `20260615120000_create_ai_studio_schema.sql` (`ai_agents`, `agent_sessions`, `chat_history`) foi **aplicada em produção** no projeto `qpwkhuvchibrxretubss`, com RLS estrito por `org_id` **verificado empiricamente** (tentativa de acesso via `anon` → `401` / Postgres `42501`). O Cofre Zod passou de 8 → **9 variáveis obrigatórias** com a entrada de `ANTHROPIC_API_KEY` (`src/lib/env.ts` + `.env.example` ajustados). §1.5, §2.4, §2.5 e §2.7 atualizadas. Projeto entra em **STANDBY** — ver §0.
+
+> **Changelog v1.1 (2026-06-15):** direcionamento estratégico oficializado por CEO (Leonardo) + CTO — a camada de Inteligência migra de *agentes hardcoded* para o modelo **AI Studio**: o usuário final cria seus próprios SDRs dinamicamente, persistindo prompt de sistema, tom de voz e configurações no banco (multi-tenant por `org_id`). Ver §1.5.
+
+---
+
+## 0. STANDBY ESTRATÉGICO (ativo desde 2026-08-08)
+
+> ⏸️ **Ordem direta do CEO (Leonardo) + CTO:** nenhuma linha de código deve ser alterada até o encerramento desta avaliação.
+
+**Objeto da avaliação:** adoção (ou não) de um **chassi de CRM open-source / pronto** para acelerar o front-end e a estrutura base, em vez de seguir escrevendo do zero.
+
+| Aspecto | Estado |
+|---------|--------|
+| **Escopo do congelamento** | TODO o código-fonte (`src/**`, `supabase/migrations/**`, frontend não bootstrapped). Mais amplo que o CODE FREEZE do §3.2, que cobre apenas as rotas do Closed Loop. |
+| **Permitido** | Leitura, análise, documentação, avaliação técnica de opções de chassi. |
+| **Bloqueado** | Implementação, refactor, novas migrations, bootstrap de frontend, commits de código. |
+| **Motivo** | Escolher o chassi **antes** de escrever a camada de apresentação evita retrabalho estrutural — a decisão condiciona stack de UI, modelo de auth e organização de módulos. |
+| **Desbloqueio** | Somente por ordem explícita de Leonardo. |
+
+**Estado congelado (baseline seguro para retomada):** backend Hono operante, Closed Loop homologado, schema AI Studio aplicado com RLS ativo, Cofre Zod com 9 variáveis. A camada de dados do AI Studio está **pronta e segura** — qualquer chassi escolhido consome esse schema, não o substitui.
+
+**Dívida operacional:** ✅ **Quitada em 2026-08-08.** Os artefatos de código da Missão 1 (migration `20260615120000` + `src/lib/env.ts` + `.env.example`) já estavam commitados e pushados em `af54b55` — `master` sincronizado com `origin/master` (0 commits à frente/atrás). Restava apenas este Manifest v1.2, selado em commit próprio de documentação. `git push` é operação **exclusiva de @devops** (ver `.claude/rules/agent-authority.md`).
 
 ---
 
@@ -30,7 +52,7 @@ Decisão fundadora (2026-05-05): **integrar, não reconstruir**. O agente Python
 
 - **AIOS Python** = motor de Meta CAPI / Tráfego Pago (owner de `META_CAPI_TOKEN`, otimização de campanhas).
 - **Nexora** = sistema de registro do pipeline (owner do lead, do deal e do estado de venda).
-- **AI Studio (Nexora)** = Agent Builder multi-tenant (owner da configuração de agentes SDR e da memória conversacional — ver §1.5). Owner de `ANTHROPIC_API_KEY` (pendente de adição ao Cofre Zod).
+- **AI Studio (Nexora)** = Agent Builder multi-tenant (owner da configuração de agentes SDR e da memória conversacional — ver §1.5). Owner de `ANTHROPIC_API_KEY` (**presente no Cofre Zod desde 2026-08-08**).
 
 ### 1.3 Diferenciação vs CRM Comum
 
@@ -67,9 +89,11 @@ Decisão fundadora (2026-05-05): **integrar, não reconstruir**. O agente Python
 
 **Coexistência:** `ai_agents` **não substitui** `agent_configs` — são bounded contexts distintos. `agent_configs` governa a automação interna do pipeline; `ai_agents` governa os bots conversacionais voltados ao Lead. Decisão de eventual deprecação de `agent_configs` fica fora desta Missão.
 
-**Pré-requisito de cofre:** `ANTHROPIC_API_KEY` deve entrar no Cofre Zod (`src/lib/env.ts`) conforme Regra de Ouro §3.5 — hoje ausente.
+**Pré-requisito de cofre:** ✅ **Resolvido.** `ANTHROPIC_API_KEY` entrou no Cofre Zod conforme Regra de Ouro §3.5 — `src/lib/env.ts:59` (validado com `nonEmpty`) + `.env.example:137`. Cofre agora com **9 variáveis obrigatórias** (ver §2.4).
 
-**Status:** Missão 1 (design de schema por @data-engineer) — **schema não aplicado**, aguardando aprovação.
+**Status:** ✅ **Missão 1 CONCLUÍDA.** Schema **aplicado em produção** — ver §2.7 para a topologia de tabelas, índices e políticas RLS homologadas.
+
+**Próxima missão (bloqueada pelo STANDBY §0):** camada de aplicação — resolver `ai_agents` + `chat_history` na API Hono e acionar o `@anthropic-ai/sdk`. Não iniciar sem desbloqueio de Leonardo.
 
 ---
 
@@ -171,7 +195,7 @@ Dois endpoints HTTP compõem o Closed Loop. Ambos **homologados em produção** 
 
 ### 2.4 Cofre Zod (Single Source of Truth para env)
 
-**Arquivo:** `src/lib/env.ts`. Único ponto de leitura de `process.env` em todo `src/` — refatorado conforme `SECURITY_POLICIES.md §3`. **8 variáveis obrigatórias** + `PORT` opcional (default 3000), validadas com fail-fast no boot:
+**Arquivo:** `src/lib/env.ts`. Único ponto de leitura de `process.env` em todo `src/` — refatorado conforme `SECURITY_POLICIES.md §3`. **9 variáveis obrigatórias** + `PORT` opcional (default 3000), validadas com fail-fast no boot:
 
 | Variável | Owner | Uso |
 |----------|-------|-----|
@@ -183,6 +207,7 @@ Dois endpoints HTTP compõem o Closed Loop. Ambos **homologados em produção** 
 | `META_CAPI_TOKEN` | AIOS Python | (presente no env mas **não consumido** por Nexora — CAPI é responsabilidade do AIOS) |
 | `META_PIXEL_ID` | AIOS Python | (idem) |
 | `AIOS_PULL_TOKEN` | Compartilhado | Auth do Outbound pull (Comando 3) — rotacionado para chave de produção em 2026-05-07 |
+| `ANTHROPIC_API_KEY` | Nexora (AI Studio) | Acionamento do `@anthropic-ai/sdk` pelos agentes SDR do AI Studio — 9ª variável, adicionada em 2026-08-08 (`src/lib/env.ts:59`) |
 
 ### 2.5 Hardening de Segurança
 
