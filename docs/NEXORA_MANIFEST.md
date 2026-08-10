@@ -1,10 +1,12 @@
 # NEXORA — Manifest
 
-**Versão:** 1.2
-**Data:** 2026-08-08
+**Versão:** 1.3
+**Data:** 2026-08-10
 **Owners:** @pm (Morgan) — Visão & Produto · @architect (Aria) — Arquitetura & Regras de Ouro
 **Audiência:** Engenheiro Sênior externo (CTO) — sincronização de estado absoluto
-**Status:** Closed Loop em produção · CODE FREEZE ativo sobre rotas do Loop (desde 2026-05-07) · **AI Studio — infraestrutura de dados APLICADA em produção (Missão 1 concluída)** · ⏸️ **STANDBY ESTRATÉGICO ativo (desde 2026-08-08) — avaliação de chassi de CRM open-source pelo CEO + CTO. Nenhuma alteração de código autorizada.**
+**Status:** ▶️ **STANDBY ENCERRADO (2026-08-10)** · Chassi decidido: **fork estratégico do DeskcommCRM** · Closed Loop em produção · CODE FREEZE ativo sobre rotas do Loop (desde 2026-05-07) · AI Studio — infraestrutura de dados APLICADA em produção (Missão 1 concluída)
+
+> **Changelog v1.3 (2026-08-10):** CEO (Leonardo) + CTO **bateram o martelo**: o Nexora passa a ser um **fork estratégico do DeskcommCRM** (repositório oficial). O STANDBY ESTRATÉGICO é **encerrado** e a seção §0 substituída pela nova diretriz de produto (§0 — Diretriz de Fork). A arquitetura base migra de "backend Hono standalone + frontend Next.js a bootstrappar" para **chassi Next.js + Supabase herdado do DeskcommCRM**, sobre o qual plugamos o diferencial proprietário: o **Módulo de Tráfego AIOS** que fecha o Closed Loop. §2.1 (Stack) atualizada. Próximo passo de engenharia: **clone e inicialização do repositório base** — aguardando ordem de deploy técnico.
 
 > **Changelog v1.2 (2026-08-08):** Missão 1 do AI Studio **concluída e homologada**. A migration `20260615120000_create_ai_studio_schema.sql` (`ai_agents`, `agent_sessions`, `chat_history`) foi **aplicada em produção** no projeto `qpwkhuvchibrxretubss`, com RLS estrito por `org_id` **verificado empiricamente** (tentativa de acesso via `anon` → `401` / Postgres `42501`). O Cofre Zod passou de 8 → **9 variáveis obrigatórias** com a entrada de `ANTHROPIC_API_KEY` (`src/lib/env.ts` + `.env.example` ajustados). §1.5, §2.4, §2.5 e §2.7 atualizadas. Projeto entra em **STANDBY** — ver §0.
 
@@ -12,23 +14,46 @@
 
 ---
 
-## 0. STANDBY ESTRATÉGICO (ativo desde 2026-08-08)
+## 0. DIRETRIZ DE PRODUTO — Fork Estratégico do DeskcommCRM (2026-08-10)
 
-> ⏸️ **Ordem direta do CEO (Leonardo) + CTO:** nenhuma linha de código deve ser alterada até o encerramento desta avaliação.
+> ▶️ **STANDBY ENCERRADO.** A avaliação de chassi aberta em 2026-08-08 foi concluída. **Decisão do CEO (Leonardo) + CTO: adotar o chassi do DeskcommCRM (repositório oficial) como base do Nexora, via fork estratégico.**
 
-**Objeto da avaliação:** adoção (ou não) de um **chassi de CRM open-source / pronto** para acelerar o front-end e a estrutura base, em vez de seguir escrevendo do zero.
+**Tese:** o Nexora não escreve mais do zero a camada de apresentação nem a infraestrutura conversacional. Herdamos um chassi "AI-First" já maduro e concentramos 100% do esforço proprietário naquilo que **nenhum CRM open-source tem**: o Módulo de Tráfego AIOS que fecha o Closed Loop de atribuição Meta.
 
-| Aspecto | Estado |
+### 0.1 O que herdamos vs. o que plugamos
+
+| Camada | Origem | Detalhe |
+|--------|--------|---------|
+| **UI / Front-end** | 🧬 Herdado (DeskcommCRM) | Next.js App Router + design system pronto. Elimina o bootstrap de frontend que estava em aberto desde §4. |
+| **WhatsApp** | 🧬 Herdado | Canal conversacional nativo — não reimplementar. |
+| **Guardrails de IA** | 🧬 Herdado | Camada de contenção/validação de resposta dos agentes. |
+| **Follow-ups** | 🧬 Herdado | Motor de cadência e reengajamento. |
+| **Supabase (Auth + DB + RLS)** | 🧬 Herdado (converge) | Mesma stack já usada pelo Nexora — convergência natural, sem troca de fornecedor de dados. |
+| **Módulo de Tráfego AIOS** | ⚡ **Proprietário Nexora** | Inbound webhook + Outbound conversions + atribuição Meta (`meta_campaign_id`/`adset`/`ad`). **É o diferencial.** Ver §2.2. |
+| **AI Studio (`ai_agents`, `agent_sessions`, `chat_history`)** | ⚡ **Proprietário Nexora** | Schema já aplicado em produção — ver §2.7. Consumido pelo chassi, não substituído por ele. |
+| **Módulo Sniper / Extração Apify** | ⚡ **Proprietário Nexora** | Ver §1.4. |
+
+### 0.2 Consequências arquiteturais
+
+1. **Next.js deixa de ser "planejado" e passa a ser a base do produto.** A decisão anterior de §2.1 ("Next.js descartado para microsserviço backend") permanece válida **apenas no seu contexto original** — ela justificava não usar Next.js como *backend do microsserviço Hono*. Com o fork, Next.js entra como **chassi da aplicação**, e o Hono é reposicionado (ver §0.3).
+2. **Supabase é o ponto de convergência.** Ambos os lados usam Postgres + RLS. A integração dos schemas (chassi + `companies`/`contacts`/`ai_agents` do Nexora) é o primeiro trabalho técnico real de arquitetura pós-clone.
+3. **Nenhuma Regra de Ouro (§3) é revogada pelo fork.** Elas passam a valer *dentro* do chassi herdado — em especial §3.1 (sem dedup), §3.2 (CODE FREEZE do Loop), §3.3 (CAPI mora no AIOS), §3.4 (`service_role` server-side) e §3.7 (`org_id`).
+
+### 0.3 Questões abertas (a resolver no deploy técnico, não agora)
+
+| Questão | Estado |
 |---------|--------|
-| **Escopo do congelamento** | TODO o código-fonte (`src/**`, `supabase/migrations/**`, frontend não bootstrapped). Mais amplo que o CODE FREEZE do §3.2, que cobre apenas as rotas do Closed Loop. |
-| **Permitido** | Leitura, análise, documentação, avaliação técnica de opções de chassi. |
-| **Bloqueado** | Implementação, refactor, novas migrations, bootstrap de frontend, commits de código. |
-| **Motivo** | Escolher o chassi **antes** de escrever a camada de apresentação evita retrabalho estrutural — a decisão condiciona stack de UI, modelo de auth e organização de módulos. |
-| **Desbloqueio** | Somente por ordem explícita de Leonardo. |
+| Destino do backend Hono (`src/server.ts`) — permanece como serviço separado para o Loop, ou as rotas migram para route handlers do chassi? | **Em aberto.** Restrição: §3.2 (CODE FREEZE) — o contrato HTTP homologado com o AIOS Python **não pode mudar** em nenhuma das hipóteses. |
+| Estratégia de merge de schema Supabase (chassi vs. migrations Nexora existentes) | **Em aberto** — @data-engineer (Dara) após o clone. |
+| Modelo de sincronização com o upstream do DeskcommCRM (rebase periódico vs. hard fork) | **Em aberto.** |
 
-**Estado congelado (baseline seguro para retomada):** backend Hono operante, Closed Loop homologado, schema AI Studio aplicado com RLS ativo, Cofre Zod com 9 variáveis. A camada de dados do AI Studio está **pronta e segura** — qualquer chassi escolhido consome esse schema, não o substitui.
+### 0.4 Próximo passo de engenharia
 
-**Dívida operacional:** ✅ **Quitada em 2026-08-08.** Os artefatos de código da Missão 1 (migration `20260615120000` + `src/lib/env.ts` + `.env.example`) já estavam commitados e pushados em `af54b55` — `master` sincronizado com `origin/master` (0 commits à frente/atrás). Restava apenas este Manifest v1.2, selado em commit próprio de documentação. `git push` é operação **exclusiva de @devops** (ver `.claude/rules/agent-authority.md`).
+> 🎯 **Clone e inicialização do repositório base DeskcommCRM.**
+
+Esta é a **única** próxima ação técnica autorizada em fila. Ela **ainda não foi executada** — @pm e @architect aguardam a ordem explícita de deploy técnico de Leonardo. Nada de código é alterado até lá.
+
+**Baseline preservado (intacto e seguro):** backend Hono operante, Closed Loop homologado em produção, schema AI Studio aplicado com RLS verificado, Cofre Zod com 9 variáveis, `master` sincronizado com `origin/master`. Nenhum desses ativos é descartado pelo fork — todos são **portados** para o chassi.
 
 ---
 
@@ -93,21 +118,24 @@ Decisão fundadora (2026-05-05): **integrar, não reconstruir**. O agente Python
 
 **Status:** ✅ **Missão 1 CONCLUÍDA.** Schema **aplicado em produção** — ver §2.7 para a topologia de tabelas, índices e políticas RLS homologadas.
 
-**Próxima missão (bloqueada pelo STANDBY §0):** camada de aplicação — resolver `ai_agents` + `chat_history` na API Hono e acionar o `@anthropic-ai/sdk`. Não iniciar sem desbloqueio de Leonardo.
+**Próxima missão (reordenada pela decisão de fork — §0):** a camada de aplicação do AI Studio (resolver `ai_agents` + `chat_history` e acionar o `@anthropic-ai/sdk`) passa a ser construída **dentro do chassi DeskcommCRM**, aproveitando os Guardrails e o canal WhatsApp já herdados — em vez de ser escrita do zero na API Hono. Fica **após** o clone e a inicialização do repositório base (§0.4).
 
 ---
 
 ## 2. Estado Atual da Arquitetura
 
-### 2.1 Stack (verificado em 2026-05-14)
+### 2.1 Stack (atualizada em 2026-08-10 — pós-decisão de fork)
+
+**Arquitetura base: chassi DeskcommCRM (Next.js + Supabase), forkado, com o Módulo de Tráfego AIOS plugado por cima.** Ver §0.
 
 | Camada | Tecnologia | Versão / Notas |
 |--------|-----------|----------------|
-| Backend HTTP | **Hono 4.12** + `@hono/node-server` | Entrypoint: `src/server.ts`. Decisão de @architect: web-standard nativo permite migrar p/ Vercel/Edge/Workers sem refactor. Next.js descartado para microsserviço backend. |
+| **Chassi da aplicação** | **Fork do DeskcommCRM** — Next.js App Router + Supabase | 🧬 **Base oficial do produto (decisão CEO+CTO 2026-08-10).** Traz UI, WhatsApp, Guardrails e Follow-ups prontos. **Ainda não clonado** — ver §0.4. |
+| Frontend | Next.js App Router + TS + Tailwind + design system do chassi | Herdado do fork. Substitui o bootstrap "do zero" que estava planejado. |
+| Backend HTTP (Loop) | **Hono 4.12** + `@hono/node-server` | Entrypoint: `src/server.ts`. Hospeda as rotas do Closed Loop, **sob CODE FREEZE (§3.2)**. Posicionamento final dentro do chassi em aberto (§0.3). Racional original mantido: web-standard nativo permite migrar p/ Vercel/Edge/Workers sem refactor. |
 | Runtime | Node.js 22+ | `"engines": { "node": ">=22.0.0" }` |
-| Frontend | Next.js 14 App Router + TS + Tailwind + shadcn/ui | **Planejado, ainda não bootstrapped.** |
-| DB | Supabase (PostgreSQL + RLS + pgvector + pg_cron) | Projeto `qpwkhuvchibrxretubss` — **LIVE em produção**. |
-| Auth | Supabase Auth | — |
+| DB | Supabase (PostgreSQL + RLS + pgvector + pg_cron) | Projeto `qpwkhuvchibrxretubss` — **LIVE em produção**. Ponto de convergência entre chassi e Nexora; merge de schema pendente (§0.3). |
+| Auth | Supabase Auth | Convergente com o chassi. |
 | IA | Claude `claude-sonnet-4-6` + Anthropic Agent SDK | — |
 | Extração | Apify (`nexora_leo`, free plan ~$5/mês, 30 req/s, 100 runs concorrentes) + PhantomBuster | — |
 | Validação | Zod 4.4 | Schema-at-the-edge + cofre de env. |
@@ -300,11 +328,14 @@ Estas são **invariantes do produto**. Quebrar uma destas regras quebra o Closed
 
 ---
 
-## 4. Próximos Passos Conhecidos (não bloqueantes)
+## 4. Próximos Passos Conhecidos
 
-Áreas livres do freeze, herdadas para sessões futuras:
+**Passo 1 (bloqueante, aguardando ordem de deploy técnico):** clone e inicialização do repositório base DeskcommCRM — ver §0.4.
 
-- **Bootstrap Frontend Next.js 14** — backend Hono permanece, story própria a criar.
+Demais áreas, livres do freeze e herdadas para sessões futuras:
+
+- ~~**Bootstrap Frontend Next.js 14**~~ — ✅ **Resolvido por decisão estratégica (2026-08-10):** o front-end vem do chassi forkado, não será bootstrapped do zero.
+- **Merge de schema Supabase** (chassi DeskcommCRM ↔ migrations Nexora) — @data-engineer, pós-clone.
 - **Single-tenant fallback** — avaliar `NEXORA_DEFAULT_INBOUND_ORG_ID` no env para clientes single-tenant.
 - **Cleanup das `.temp/`** — `supabase/.temp/*` e `src/executions/test-google-maps-mapper.ts` permanecem dirty no working tree (não relacionados ao Loop).
 - **Suprimir false-positives ESLint** — `security/detect-object-injection` em `google-maps-mapper.service.ts:287, :292` (já documentado — keys são literais internos controlados).
