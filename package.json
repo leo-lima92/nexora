@@ -32,10 +32,10 @@
     "flywheel:judge": "tsx --env-file=.env --env-file=.env.local scripts/flywheel-judge-live.ts",
     "dev:hono": "tsx watch --env-file=.env src/server.ts",
     "start:hono": "node --env-file=.env dist/server.js",
-    "build:hono": "tsc -p tsconfig.hono.json",
+    "build:hono": "tsc -p tsconfig.hono.json && node -e \"require('fs').writeFileSync('dist/package.json',JSON.stringify({type:'module'}))\"",
     "typecheck:hono": "tsc -p tsconfig.hono.json --noEmit",
     "lint:hono": "eslint src",
-    "security-check": "npm audit && eslint src"
+    "security-check": "pnpm audit && eslint src"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.16",
