@@ -82,11 +82,15 @@ select
   (select count(*) from public.user_organizations)::int as memberships
 `;
 
-/** Sonda tolerante: usada ANTES, quando a tabela pode ainda não existir. */
+/**
+ * Sonda tolerante: usada ANTES, quando `user_organizations` pode ainda não
+ * existir. Não dá para embrulhar a referência num `case` — o Postgres resolve
+ * a tabela no PARSE da query, então a expressão falha mesmo no ramo morto.
+ * A referência sai do SQL de vez e vira a constante -1.
+ */
 const PROBE_PRE = PROBE.replace(
   "(select count(*) from public.user_organizations)::int as memberships",
-  "case when to_regclass('public.user_organizations') is null then -1 else " +
-    "(select count(*) from public.user_organizations) end::int as memberships",
+  "(-1)::int as memberships",
 );
 
 function show(label, row) {
