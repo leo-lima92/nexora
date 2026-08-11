@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:all": "node scripts/dev-all.mjs",
     "dev:webpack": "next dev",
     "build": "next build",
     "build:webpack": "next build",
