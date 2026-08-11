@@ -41,10 +41,35 @@ tabelas que as migrations-stub `0001`–`0009` nunca criaram — medido: 21 apli
 O caminho de instalação suportado é o `supabase/baseline.sql`, que é o que o kit self-host
 aplica.
 
+## Nota — renumeração do tenancy shim em 2026-08-11
+
+O shim de tenancy do fork NEXORA nasceu como `20260428000000_tenancy_shim_platform_base.sql`,
+timestamp que a linha `0016_lgpd_emergency_scope` da tabela abaixo já reivindicava. Duas
+entradas disputando a mesma PK de `supabase_migrations.schema_migrations` é exatamente a
+colisão que a nota de 2026-08-05 (issue #143) documenta.
+
+Aplicado o mesmo remédio daquela nota — **+1 segundo**, conteúdo byte-a-byte idêntico:
+
+| Antes | Depois |
+|---|---|
+| `20260428000000_tenancy_shim_platform_base` | `20260428000001_...` |
+
+A ordem de aplicação não muda: o CLI ordena alfabeticamente pelo prefixo, e o shim continua
+antes de `20260428195354_0001_platform_base`, que é onde ele precisa estar (o chassi referencia
+`user_organizations` e `fn_user_org_ids()` a partir da `0001`).
+
+**Defeito remanescente, não corrigido aqui:** a linha `0016_lgpd_emergency_scope` registra a
+versão `20260428000000`, que **retrocede** em relação à `0015` (`20260429090000`) e à `0017`
+(`20260429100000`) — e **não existe arquivo `*_0016_*.sql` neste repositório**. O ledger
+descreve uma migration cujo SQL não foi importado no fork. Renumerar o shim tira a colisão de
+PK, mas não repõe o arquivo ausente. Quem depender do `lgpd_requests.emergency`/`scope` precisa
+recuperar essa migration do upstream antes.
+
 ## Applied
 
 | Version | Name | Description |
 |---|---|---|
+| `20260428000001` | `tenancy_shim_platform_base` | **Fork NEXORA (v1.3).** Entrega os dois objetos de tenancy que o chassi DeskcommCRM usa mas nunca define: tabela `user_organizations` (membership user↔org, UNIQUE (user_id, organization_id) — o app trata 23505 como idempotência no signup) e as funções `fn_user_org_ids()` / `fn_is_org_admin()` / `fn_user_organizations_touch()`, mais 4 policies RLS na tabela nova. Sem eles as 108 policies do chassi não sobem e suas ~70 tabelas ficam sem isolamento cross-tenant. Não altera nenhuma tabela do lado NEXORA: `profiles.org_id`/`get_org_id()` seguem a fonte de verdade nossa, `user_organizations`/`fn_user_org_ids()` a do chassi, ambos sobre a mesma `organizations`. Ambas as funções nascem com EXECUTE revogado de `public` e `anon`. |
 | `20260428195354` | `0001_platform_base` | organizations, user_organizations, platform_admins, api_tokens, api_audit_log, user_recovery_codes, idempotency_keys + RLS helpers (fn_user_org_ids, fn_is_platform_admin, fn_user_role_in_org, fn_role_at_least) |
 | `20260428195513` | `0002_event_log_and_compat` | event_log + emit_event/fn_log_event helpers + compat aliases (fn_set_updated_at, fn_user_role_in returning int) |
 | `20260428195708` | `0003_customer_360` | contacts (CPF encrypted), crm_pipelines, crm_stages, crm_leads, crm_lead_activities, crm_lead_links, merge_queue + 5 domain triggers |

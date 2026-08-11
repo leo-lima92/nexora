@@ -22,7 +22,7 @@ import pg from "pg";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MIGRATION = resolve(
   ROOT,
-  "supabase/migrations/20260428000000_tenancy_shim_platform_base.sql",
+  "supabase/migrations/20260428000001_tenancy_shim_platform_base.sql",
 );
 const COMMIT = process.argv.includes("--commit");
 
