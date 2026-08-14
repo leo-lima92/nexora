@@ -11,8 +11,14 @@
  *     (nem atualiza nem cria contact). Fallback por website/telefone NÃO é
  *     implementado nesta iteração — `placeId` é a fonte única da verdade.
  *   • Places sem `placeId` são pulados (sem chave de dedup = risco de duplicar).
- *   • Contact só é criado se houver `phoneUnformatted` não-vazio — evita
- *     "Contato" órfão sem nenhum canal real.
+ *   • Contact só é criado se o telefone raspado chegar a E.164 (ver `toE164`) —
+ *     evita "Contato" órfão sem nenhum canal real. Telefone ambíguo é
+ *     reportado em `errors[]`, nunca descartado em silêncio.
+ *   • `contacts` é a tabela CANÔNICA do chassi (migration 0145): a pessoa
+ *     raspada nasce alcançável por WhatsApp, funil e agente. Por isso as
+ *     colunas aqui são `organization_id`/`name`/`phone_number` — e não o
+ *     `org_id`/`first_name`/`phone` do modelo AIOS antigo. `companies`, essa
+ *     sim AIOS-nativa, segue com `org_id`.
  *   • Erros por place são isolados: um INSERT que falhar não para o loop;
  *     a falha é agregada em `errors[]` para o caller decidir o que fazer.
  */
@@ -103,8 +109,9 @@ export async function mapGoogleMapsResults(
       });
       result.companiesCreated += 1;
 
-      // Insert contact se tiver telefone normalizado.
-      const phone = normalizePhone(place);
+      // Insert contact se o telefone raspado chegar a E.164 — ver toE164().
+      const rawPhone = readRawPhone(place);
+      const phone = toE164(rawPhone);
       if (phone) {
         await insertContact({
           orgId: input.orgId,
@@ -115,6 +122,14 @@ export async function mapGoogleMapsResults(
           phone,
         });
         result.contactsCreated += 1;
+      } else if (rawPhone) {
+        // Telefone existe mas é ambíguo. A company fica; o contato não nasce
+        // sem canal. Reportado para não sumir em silêncio.
+        result.errors.push({
+          placeId,
+          title: place.title,
+          message: `telefone "${rawPhone}" não é E.164 — contato não criado (empresa mantida)`,
+        });
       }
     } catch (err) {
       result.errors.push({
@@ -204,17 +219,16 @@ interface InsertContactArgs {
 
 async function insertContact(args: InsertContactArgs): Promise<void> {
   const row: ContactInsert = {
-    org_id: args.orgId,
+    organization_id: args.orgId,
     company_id: args.companyId,
-    first_name: 'Contato',
-    last_name: args.companyName,
-    phone: args.phone,
+    name: `Contato ${args.companyName}`,
+    phone_number: args.phone,
     preferred_channel: 'phone',
     source: 'apify_google_maps',
     apify_run_id: args.apifyRunId,
   };
 
-  if (args.createdBy) row.owner_id = args.createdBy;
+  if (args.createdBy) row.created_by_user_id = args.createdBy;
 
   const { error } = await supabaseAdmin.from('contacts').insert(row);
 
@@ -255,7 +269,7 @@ function extractDomain(websiteRaw: string | undefined): string | null {
   }
 }
 
-function normalizePhone(place: GoogleMapsPlace): string | null {
+function readRawPhone(place: GoogleMapsPlace): string | null {
   const unformatted = readString(place, 'phoneUnformatted');
   if (unformatted && unformatted.trim()) return unformatted.trim();
 
@@ -263,6 +277,24 @@ function normalizePhone(place: GoogleMapsPlace): string | null {
   if (formatted) return formatted;
 
   return null;
+}
+
+/**
+ * Telefone raspado → E.164 canônico, ou `null` quando ambíguo.
+ *
+ * Espelha `public.fn_e164_or_null()` (migration 0145) — as duas pontas aplicam
+ * a MESMA regra, e `contacts.phone_number` tem CHECK `^\+\d{8,15}$`.
+ *
+ * Só normaliza o que já é internacional (tem `+`). Número nacional
+ * ("(11) 3000-0000") devolve null em vez de virar "+1130000000": prefixar `+`
+ * sem código de país produz E.164 de formato válido e destino ERRADO, e o
+ * WhatsApp sairia para um estranho. Sem telefone é melhor que telefone errado.
+ */
+function toE164(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.trim().startsWith('+')) return null;
+  const candidate = `+${raw.replace(/\D/g, '')}`;
+  return /^\+\d{8,15}$/.test(candidate) ? candidate : null;
 }
 
 function buildTags(place: GoogleMapsPlace): string[] {

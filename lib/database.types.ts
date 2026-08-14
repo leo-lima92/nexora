@@ -1990,11 +1990,13 @@ export type Database = {
       contacts: {
         Row: {
           anonymized_at: string | null
+          apify_run_id: string | null
           avatar_storage_path: string | null
           avatar_updated_at: string | null
           birthdate: string | null
           blocked_at: string | null
           blocked_reason: string | null
+          company_id: string | null
           consent: Json
           cpf_encrypted: string | null
           cpf_hash: string | null
@@ -2014,6 +2016,7 @@ export type Database = {
           name: string | null
           organization_id: string
           phone_number: string | null
+          preferred_channel: string | null
           source: string
           source_metadata: Json
           tags: string[]
@@ -2022,11 +2025,13 @@ export type Database = {
         }
         Insert: {
           anonymized_at?: string | null
+          apify_run_id?: string | null
           avatar_storage_path?: string | null
           avatar_updated_at?: string | null
           birthdate?: string | null
           blocked_at?: string | null
           blocked_reason?: string | null
+          company_id?: string | null
           consent?: Json
           cpf_encrypted?: string | null
           cpf_hash?: string | null
@@ -2046,6 +2051,7 @@ export type Database = {
           name?: string | null
           organization_id: string
           phone_number?: string | null
+          preferred_channel?: string | null
           source?: string
           source_metadata?: Json
           tags?: string[]
@@ -2054,11 +2060,13 @@ export type Database = {
         }
         Update: {
           anonymized_at?: string | null
+          apify_run_id?: string | null
           avatar_storage_path?: string | null
           avatar_updated_at?: string | null
           birthdate?: string | null
           blocked_at?: string | null
           blocked_reason?: string | null
+          company_id?: string | null
           consent?: Json
           cpf_encrypted?: string | null
           cpf_hash?: string | null
@@ -2078,6 +2086,7 @@ export type Database = {
           name?: string | null
           organization_id?: string
           phone_number?: string | null
+          preferred_channel?: string | null
           source?: string
           source_metadata?: Json
           tags?: string[]
@@ -2085,6 +2094,13 @@ export type Database = {
           wa_identity?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contacts_is_merged_into_fkey"
             columns: ["is_merged_into"]

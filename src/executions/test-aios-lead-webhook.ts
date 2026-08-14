@@ -23,6 +23,13 @@ import { supabaseAdmin } from '../lib/supabase.js';
 const HR = '─'.repeat(70);
 const log = (tag: string, msg: string): void => console.log(`[${tag}] ${msg}`);
 
+/** Espelha `public.fn_e164_or_null()` (migration 0145) — ver google-maps-mapper. */
+function toE164(raw: string | null | undefined): string | null {
+  if (!raw || !raw.trim().startsWith('+')) return null;
+  const candidate = `+${raw.replace(/\D/g, '')}`;
+  return /^\+\d{8,15}$/.test(candidate) ? candidate : null;
+}
+
 async function resolveOrgId(): Promise<string> {
   const { data, error } = await supabaseAdmin
     .from('organizations')
@@ -105,7 +112,7 @@ async function main(): Promise<void> {
 
   const { data: contacts, error: contactsErr } = await supabaseAdmin
     .from('contacts')
-    .select('id, org_id, company_id, first_name, last_name, phone, email, source')
+    .select('id, organization_id, company_id, name, phone_number, email, source')
     .eq('company_id', companyId);
 
   if (contactsErr) throw new Error(`[smoke] contacts query failed: ${contactsErr.message}`);
@@ -125,9 +132,11 @@ async function main(): Promise<void> {
     ['meta_ad_id matches', company.meta_ad_id === payload.meta_ad_id],
     ['status=novo (default)', company.status === 'novo'],
     ['contact.company_id matches', contacts[0]?.company_id === companyId],
-    ['contact.first_name=João', contacts[0]?.first_name === 'João'],
-    ['contact.last_name=Teste da Silva', contacts[0]?.last_name === 'Teste da Silva'],
-    ['contact.phone matches', contacts[0]?.phone === payload.lead_data.phone],
+    // A 0145 fundiu first_name+last_name na coluna canônica `name` do chassi.
+    ['contact.name=João Teste da Silva', contacts[0]?.name === 'João Teste da Silva'],
+    // phone_number é E.164 normalizado por fn_e164_or_null — comparar com o
+    // payload cru só vale se o payload já vier internacional.
+    ['contact.phone_number normalizado', contacts[0]?.phone_number === toE164(payload.lead_data.phone)],
     ['contact.email matches', contacts[0]?.email === payload.lead_data.email],
   ];
 

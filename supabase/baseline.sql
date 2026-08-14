@@ -11008,6 +11008,183 @@ revoke all on table public.deals            from anon;
 revoke all on table public.linkedin_threads from anon;
 
 
+-- ---- convergência: extraction_runs, rpc_upsert_lead e a fusão de contacts (migration 0145) ----
+--
+-- `contacts` do AIOS e do chassi eram DUAS tabelas colididas no mesmo nome. Aqui
+-- viram UMA: a do chassi (que carrega LGPD, consentimento, anonimização) é a
+-- canônica, e ganha só as colunas que trazem fato novo. Vinte e uma tabelas
+-- apontam para `contacts` — conversations, messages, crm_leads, lead_state… —
+-- então prospect raspado em tabela paralela nunca receberia WhatsApp nem entraria
+-- num funil. Uma pessoa = uma linha é o que mantém o Closed Loop contínuo.
+--
+-- A chave de tenant NÃO é duplicada: `org_id` ao lado de `organization_id` faria
+-- a RLS filtrar uma coluna enquanto o writer grava a outra. O writer converge.
+-- O telefone raspado passa por fn_e164_or_null() — a constraint E.164 do chassi
+-- é alimentada, nunca relaxada.
+
+create table if not exists public.extraction_runs (
+  id                uuid default gen_random_uuid() not null,
+  org_id            uuid not null,
+  source            text not null,
+  status            text default 'pending' not null,
+  apify_actor_id    text,
+  apify_run_id      text,
+  query             text,
+  cnae_codes        text[],
+  location          text,
+  max_results       integer default 100 not null,
+  results_count     integer default 0 not null,
+  companies_created integer default 0 not null,
+  contacts_created  integer default 0 not null,
+  raw_data          jsonb,
+  error_message     text,
+  created_by        uuid,
+  started_at        timestamptz,
+  completed_at      timestamptz,
+  created_at        timestamptz default now() not null,
+  constraint extraction_runs_pkey primary key (id),
+  constraint extraction_runs_org_id_fkey foreign key (org_id)
+    references public.organizations(id) on delete cascade,
+  constraint extraction_runs_created_by_fkey foreign key (created_by)
+    references auth.users(id) on delete set null,
+  constraint extraction_runs_source_check check (source in (
+    'google_maps', 'apify_google_maps',
+    'linkedin', 'apify_linkedin',
+    'instagram', 'apify_instagram',
+    'manual', 'phantombuster_linkedin', 'cnae_scraper'
+  )),
+  constraint extraction_runs_status_check check (status in (
+    'pending', 'running', 'completed', 'succeeded', 'failed', 'aborted'
+  ))
+);
+
+create index if not exists extraction_runs_org_created_idx
+  on public.extraction_runs (org_id, created_at desc);
+
+-- NÃO-único de propósito: um UNIQUE proibiria duas extrações legítimas do mesmo
+-- source com queries diferentes (google_maps de SP e do Rio ao mesmo tempo).
+create index if not exists extraction_runs_active_by_source_idx
+  on public.extraction_runs (org_id, source)
+  where status in ('pending', 'running');
+
+alter table public.extraction_runs enable row level security;
+
+drop policy if exists tenant_isolation_extraction_runs_all on public.extraction_runs;
+create policy tenant_isolation_extraction_runs_all on public.extraction_runs
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
+  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+
+revoke all on table public.extraction_runs from anon;
+
+alter table public.contacts add column if not exists company_id        uuid;
+alter table public.contacts add column if not exists apify_run_id      text;
+alter table public.contacts add column if not exists preferred_channel text;
+
+do $$
+begin
+  alter table public.contacts
+    add constraint contacts_company_id_fkey foreign key (company_id)
+    references public.companies(id) on delete set null;
+exception
+  when duplicate_object then null;
+end $$;
+
+create index if not exists contacts_company_id_idx
+  on public.contacts (company_id) where company_id is not null;
+create index if not exists contacts_org_apify_run_idx
+  on public.contacts (organization_id, apify_run_id) where apify_run_id is not null;
+
+create or replace function public.fn_e164_or_null(p_raw text)
+returns text
+language sql
+immutable
+set search_path = pg_temp
+as $$
+  select case
+    when p_raw is null or btrim(p_raw) = '' then null
+    when btrim(p_raw) !~ '^\+' then null
+    when '+' || regexp_replace(p_raw, '\D', '', 'g') ~ '^\+\d{8,15}$'
+      then '+' || regexp_replace(p_raw, '\D', '', 'g')
+    else null
+  end
+$$;
+
+revoke execute on function public.fn_e164_or_null(text) from public, anon;
+grant  execute on function public.fn_e164_or_null(text) to service_role;
+
+drop function if exists public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+);
+
+create function public.rpc_upsert_lead(
+  p_org_id            uuid,
+  p_name              text,
+  p_lead_origin       text,
+  p_traffic_source    text,
+  p_meta_campaign_id  text,
+  p_meta_adset_id     text,
+  p_meta_ad_id        text,
+  p_first_name        text,
+  p_last_name         text default null,
+  p_phone             text default null,
+  p_email             text default null
+)
+returns table (company_id uuid, contact_id uuid)
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_company_id uuid;
+  v_contact_id uuid;
+  v_name       text;
+  v_phone      text;
+  v_meta       jsonb;
+begin
+  insert into public.companies (
+    org_id, name, lead_origin, traffic_source,
+    meta_campaign_id, meta_adset_id, meta_ad_id,
+    status, source
+  )
+  values (
+    p_org_id, p_name, p_lead_origin, p_traffic_source,
+    p_meta_campaign_id, p_meta_adset_id, p_meta_ad_id,
+    'novo', 'manual'
+  )
+  returning id into v_company_id;
+
+  v_name := nullif(btrim(concat_ws(' ', nullif(btrim(p_first_name), ''),
+                                        nullif(btrim(p_last_name), ''))), '');
+
+  v_phone := public.fn_e164_or_null(p_phone);
+  v_meta := jsonb_build_object('ingested_by', 'rpc_upsert_lead');
+  if p_phone is not null and btrim(p_phone) <> '' and v_phone is null then
+    v_meta := v_meta || jsonb_build_object('phone_raw', p_phone);
+  end if;
+
+  insert into public.contacts (
+    organization_id, company_id, name, email, phone_number,
+    source, source_metadata
+  )
+  values (
+    p_org_id, v_company_id, v_name, p_email, v_phone,
+    'manual', v_meta
+  )
+  returning id into v_contact_id;
+
+  return query select v_company_id, v_contact_id;
+end;
+$$;
+
+revoke all on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) from public, anon;
+
+grant execute on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) to service_role;
+
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES

@@ -662,108 +662,105 @@ export type Database = {
       }
       contacts: {
         Row: {
+          anonymized_at: string | null
           apify_run_id: string | null
-          avatar_url: string | null
+          avatar_storage_path: string | null
+          avatar_updated_at: string | null
+          birthdate: string | null
+          blocked_at: string | null
+          blocked_reason: string | null
           company_id: string | null
+          consent: Json
+          cpf_encrypted: string | null
+          cpf_hash: string | null
           created_at: string
-          department: string | null
-          do_not_contact: boolean
+          created_by_user_id: string | null
+          display_name: string | null
           email: string | null
-          embedding: string | null
-          enriched_at: string | null
-          enrichment_data: Json
-          first_name: string
+          email_normalized: string | null
+          force_human: boolean
           id: string
-          instagram_handle: string | null
-          is_deleted: boolean
-          last_name: string | null
-          linkedin_connection: string | null
-          linkedin_headline: string | null
-          linkedin_profile_id: string | null
-          linkedin_scraped_at: string | null
-          linkedin_skills: string[]
-          linkedin_summary: string | null
-          linkedin_url: string | null
-          mobile: string | null
-          org_id: string
-          owner_id: string | null
-          phone: string | null
+          is_anonymized: boolean
+          is_blocked: boolean
+          is_merged_into: string | null
+          last_activity_at: string | null
+          locale: string | null
+          merged_at: string | null
+          name: string | null
+          organization_id: string
+          phone_number: string | null
           preferred_channel: string | null
-          seniority: string | null
-          source: string | null
+          source: string
+          source_metadata: Json
           tags: string[]
-          timezone: string | null
-          title: string | null
           updated_at: string
+          wa_identity: string | null
+          wa_lid: string | null
         }
         Insert: {
+          anonymized_at?: string | null
           apify_run_id?: string | null
-          avatar_url?: string | null
+          avatar_storage_path?: string | null
+          avatar_updated_at?: string | null
+          birthdate?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           company_id?: string | null
+          consent?: Json
+          cpf_encrypted?: string | null
+          cpf_hash?: string | null
           created_at?: string
-          department?: string | null
-          do_not_contact?: boolean
+          created_by_user_id?: string | null
+          display_name?: string | null
           email?: string | null
-          embedding?: string | null
-          enriched_at?: string | null
-          enrichment_data?: Json
-          first_name: string
+          force_human?: boolean
           id?: string
-          instagram_handle?: string | null
-          is_deleted?: boolean
-          last_name?: string | null
-          linkedin_connection?: string | null
-          linkedin_headline?: string | null
-          linkedin_profile_id?: string | null
-          linkedin_scraped_at?: string | null
-          linkedin_skills?: string[]
-          linkedin_summary?: string | null
-          linkedin_url?: string | null
-          mobile?: string | null
-          org_id: string
-          owner_id?: string | null
-          phone?: string | null
+          is_anonymized?: boolean
+          is_blocked?: boolean
+          is_merged_into?: string | null
+          last_activity_at?: string | null
+          locale?: string | null
+          merged_at?: string | null
+          name?: string | null
+          organization_id: string
+          phone_number?: string | null
           preferred_channel?: string | null
-          seniority?: string | null
-          source?: string | null
+          source?: string
+          source_metadata?: Json
           tags?: string[]
-          timezone?: string | null
-          title?: string | null
           updated_at?: string
         }
         Update: {
+          anonymized_at?: string | null
           apify_run_id?: string | null
-          avatar_url?: string | null
+          avatar_storage_path?: string | null
+          avatar_updated_at?: string | null
+          birthdate?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           company_id?: string | null
+          consent?: Json
+          cpf_encrypted?: string | null
+          cpf_hash?: string | null
           created_at?: string
-          department?: string | null
-          do_not_contact?: boolean
+          created_by_user_id?: string | null
+          display_name?: string | null
           email?: string | null
-          embedding?: string | null
-          enriched_at?: string | null
-          enrichment_data?: Json
-          first_name?: string
+          force_human?: boolean
           id?: string
-          instagram_handle?: string | null
-          is_deleted?: boolean
-          last_name?: string | null
-          linkedin_connection?: string | null
-          linkedin_headline?: string | null
-          linkedin_profile_id?: string | null
-          linkedin_scraped_at?: string | null
-          linkedin_skills?: string[]
-          linkedin_summary?: string | null
-          linkedin_url?: string | null
-          mobile?: string | null
-          org_id?: string
-          owner_id?: string | null
-          phone?: string | null
+          is_anonymized?: boolean
+          is_blocked?: boolean
+          is_merged_into?: string | null
+          last_activity_at?: string | null
+          locale?: string | null
+          merged_at?: string | null
+          name?: string | null
+          organization_id?: string
+          phone_number?: string | null
           preferred_channel?: string | null
-          seniority?: string | null
-          source?: string | null
+          source?: string
+          source_metadata?: Json
           tags?: string[]
-          timezone?: string | null
-          title?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -775,17 +772,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contacts_org_id_fkey"
-            columns: ["org_id"]
+            foreignKeyName: "contacts_is_merged_into_fkey"
+            columns: ["is_merged_into"]
             isOneToOne: false
-            referencedRelation: "organizations"
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "contacts_owner_id_fkey"
-            columns: ["owner_id"]
+            foreignKeyName: "contacts_organization_id_fkey"
+            columns: ["organization_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
