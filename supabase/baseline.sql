@@ -11260,3 +11260,28 @@ grant execute on function public.fn_lgpd_cascade_redact_contact(uuid, uuid, uuid
 grant execute on function public.fn_update_budget_consumption() to service_role;
 
 notify pgrst, 'reload schema';
+
+-- ---- execução converge com a intenção: revoke de authenticated (migration 0146) ----
+-- A 0145 fechou `public, anon` nas suas duas funções e declarou "caller
+-- esperado: service_role". O ACL real trazia `authenticated=X` — porque este
+-- baseline tem QUATRO linhas de ALTER DEFAULT PRIVILEGES ... ON FUNCTIONS
+-- (postgres, anon, authenticated, service_role), e a doutrina só nomeia duas
+-- origens. Toda função criada por apêndice nasce também com a de
+-- `authenticated`, que ninguém escreve e por isso ninguém revisa.
+-- Não era vazamento cross-tenant (o `security invoker` da 0145 segurou: um
+-- viewer da org A chamando com p_org_id da org B toma 42501), mas é deriva
+-- entre o declarado e o real — e o guarda-costas é uma palavra só. Idempotente:
+-- revoke de privilégio ausente é no-op.
+revoke execute on function public.fn_e164_or_null(text)
+  from public, anon, authenticated;
+grant  execute on function public.fn_e164_or_null(text)
+  to service_role;
+
+revoke execute on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) from public, anon, authenticated;
+grant execute on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) to service_role;
+
+notify pgrst, 'reload schema';
