@@ -39,8 +39,10 @@ app.get('/health', (c) => c.json({ status: 'ok', service: 'nexora-api' }));
 // ─────────────────────────────────────────────────────────────────────────────
 
 const aiosLeadSchema = z.object({
-  // org_id: tenant dono do lead. AIOS sabe pra quem está prospectando.
-  // Schema exige; FK em companies/contacts garante integridade no DB.
+  // org_id: AFIRMAÇÃO do chamador sobre o tenant, não a decisão sobre ele.
+  // Continua obrigatório (o AIOS já o envia, e conferi-lo pega configuração
+  // errada cedo), mas quem manda é `env.AIOS_WEBHOOK_ORG_ID`: divergência vira
+  // 403 no handler. Ver o porteiro do tenant em POST /api/webhooks/aios-lead.
   org_id: z.string().uuid('org_id deve ser um UUID válido'),
 
   // Rastreamento Meta Ads — todos opcionais EXCETO os que o user listou
@@ -210,16 +212,44 @@ app.post('/api/webhooks/aios-lead', async (c) => {
 
   const payload: AiosLeadPayload = parsed.data;
 
+  // ── 2b. PORTEIRO DO TENANT ────────────────────────────────────────────────
+  // O passo 1 provou que "o AIOS falou". Não provou "o AIOS falou POR ESTA
+  // organização" — `AIOS_WEBHOOK_SECRET` é um segredo único e global, não um
+  // por tenant. Enquanto o `org_id` do corpo era usado direto, qualquer
+  // portador do segredo escrevia em QUALQUER organização trocando um UUID no
+  // JSON, e o `supabaseAdmin` abaixo é service_role — ele BYPASSA a RLS, então
+  // o banco não tinha como recusar. Anti-pattern nº 10 do CLAUDE.md.
+  //
+  // O que vai para a RPC é `env.AIOS_WEBHOOK_ORG_ID`, nunca o corpo. O
+  // `org_id` recebido é tratado como AFIRMAÇÃO a conferir: divergir é 403, não
+  // reescrita silenciosa. Falhar alto importa — um AIOS mal configurado
+  // apontando para o tenant errado precisa aparecer como erro na integração,
+  // não como leads sumindo na organização de outra pessoa.
+  if (payload.org_id !== env.AIOS_WEBHOOK_ORG_ID) {
+    console.warn('[aios-lead] org_id do corpo diverge do tenant desta instância — recusado');
+    return c.json(
+      {
+        error: 'Forbidden',
+        details: 'org_id does not match the organization bound to this instance',
+      },
+      403,
+    );
+  }
+
   // ── 3. Persistência atômica via RPC `rpc_upsert_lead` ──────────────────
   // A RPC envelopa os 2 inserts (companies + contacts) numa transação PL/pgSQL.
-  // Falha em qualquer ponto faz ROLLBACK total — sem órfãos. Migrations:
-  //   supabase/migrations/20260509185804_create_rpc_upsert_lead.sql
-  //   supabase/migrations/20260509190753_fix_rpc_upsert_lead_nullable_params.sql
+  // Falha em qualquer ponto faz ROLLBACK total — sem órfãos.
+  //
+  // Fonte da função: supabase/migrations/20260813180000_0145_convergencia_contacts_e_extracao.sql
+  // (a 0145 dropa e recria). As migrations AIOS 20260509185804/20260509190753,
+  // que este comentário citava, escreviam num shape de `contacts` que não
+  // existe mais — quem for depurar por ali lê a versão errada da verdade.
+  //
   // p_last_name/p_phone/p_email são opcionais na função SQL (DEFAULT NULL) —
   // omitir a propriedade aqui faz o PG aplicar NULL no valor.
   const { first, last } = splitName(payload.lead_data.name);
   const { data: rpcRows, error: rpcError } = await supabaseAdmin.rpc('rpc_upsert_lead', {
-    p_org_id: payload.org_id,
+    p_org_id: env.AIOS_WEBHOOK_ORG_ID,
     p_name: payload.lead_data.name,
     p_lead_origin: payload.lead_origin,
     p_traffic_source: payload.traffic_source,
@@ -309,13 +339,29 @@ app.get('/api/outbound/conversions', conversionsRateLimit, async (c) => {
 
   const { org_id, since, limit } = parsed.data;
 
+  // ── 2b. Porteiro do tenant (mesma razão do webhook, do lado da LEITURA).
+  //    `AIOS_PULL_TOKEN` também é global: sozinho ele autorizaria ler as
+  //    vendas fechadas de qualquer organização. Aqui o vazamento seria de
+  //    dado comercial de terceiros — pior que a escrita, porque é silencioso:
+  //    ninguém percebe que foi lido.
+  if (org_id !== env.AIOS_WEBHOOK_ORG_ID) {
+    console.warn('[outbound-conversions] org_id divergente do tenant desta instância — recusado');
+    return c.json(
+      {
+        error: 'Forbidden',
+        details: 'org_id does not match the organization bound to this instance',
+      },
+      403,
+    );
+  }
+
   // ── 3. Query: companies fechadas (status='venda_fechada') desde o cursor,
   //    ordenadas por updated_at ASC para o AIOS avançar o cursor sem pular
-  //    registros.
+  //    registros. O filtro usa a env (fonte confiável), não o parâmetro.
   const { data, error } = await supabaseAdmin
     .from('companies')
     .select('id, deal_value, meta_campaign_id, meta_adset_id, meta_ad_id, updated_at')
-    .eq('org_id', org_id)
+    .eq('org_id', env.AIOS_WEBHOOK_ORG_ID)
     .eq('status', 'venda_fechada')
     .gte('updated_at', since)
     .order('updated_at', { ascending: true })

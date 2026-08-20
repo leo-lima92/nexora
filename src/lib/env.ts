@@ -44,6 +44,28 @@ const envSchema = z.object({
 
   // ── Inbound (Closed Loop): ponte Nexora ↔ AIOS Python + Meta CAPI ───────
   AIOS_WEBHOOK_SECRET: nonEmpty('AIOS_WEBHOOK_SECRET'),
+
+  // ── A qual organização esta instância pertence ──────────────────────────
+  // Fonte CONFIÁVEL do tenant para tudo que entra pela ponte AIOS. Existe
+  // porque `AIOS_WEBHOOK_SECRET` e `AIOS_PULL_TOKEN` são segredos ÚNICOS e
+  // globais: eles provam "o AIOS falou", jamais "o AIOS falou POR ESTA
+  // organização". Sem este binding, o `org_id` do corpo era a única coisa
+  // decidindo em qual tenant o lead cairia — e quem tivesse o segredo escrevia
+  // em qualquer um, trocando um UUID no JSON. O CLAUDE.md chama isso pelo
+  // nome (anti-pattern nº 10): tenant resolvido de cookie/JWT/segredo/path,
+  // NUNCA do corpo.
+  //
+  // Obrigatória de propósito. Fail-fast no boot é preferível a subir com o
+  // tenant indefinido e descobrir pela primeira gravação no lugar errado —
+  // e nada em produção depende disto hoje (o módulo Hono ainda não está no
+  // compose nem no CI), então o custo do fail-closed é zero.
+  //
+  // Instância que um dia precise atender VÁRIOS tenants pela mesma ponte não
+  // deve relaxar isto: a resposta certa passa a ser segredo POR organização,
+  // com o tenant DERIVADO do segredo apresentado (o corpo continua sem voz).
+  AIOS_WEBHOOK_ORG_ID: z
+    .string()
+    .uuid('AIOS_WEBHOOK_ORG_ID deve ser o UUID da organização dona desta instância'),
   META_CAPI_TOKEN: nonEmpty('META_CAPI_TOKEN'),
   META_PIXEL_ID: nonEmpty('META_PIXEL_ID'),
 
