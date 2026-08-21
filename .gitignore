@@ -143,3 +143,15 @@ evidence/.sonda-score-residuo.json
 
 # sessão reusada pelas jornadas (contém tokens)
 .auth/
+
+# Config local de outras ferramentas de IA/IDE. Cada uma gera a sua pasta a
+# partir do CLAUDE.md/AGENTS.md deste repo — é artefato derivado da máquina de
+# quem clonou, não contrato do projeto. Versionar arrastaria a preferência de um
+# dev para todos os outros.
+.codex/
+.cursor/
+.gemini/
+
+# Log de crash do runtime Hono (o `*.log` acima não casa a extensão `.err`).
+.hono.err
+*.err
