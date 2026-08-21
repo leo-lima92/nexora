@@ -59,8 +59,38 @@ const DIVERGENCIAS_CONHECIDAS = {
    *  então o clone recebe a mudança; quem replicasse só `migrations/` em ordem,
    *  não. */
   semArquivo: ["0016_lgpd_emergency_scope"],
-  /** O arquivo de bootstrap, anterior à tabela "Applied". */
-  semLinha: ["00001_initial_schema"],
+  /**
+   * O arquivo de bootstrap, anterior à tabela "Applied", mais as dez migrations
+   * herdadas do fork AIOS (nexora) ANTES da convergência com o chassi
+   * DeskcommCRM.
+   *
+   * As dez são reconhecíveis pela forma do nome: `<timestamp>_<slug>`, sem o
+   * `NNNN` sequencial que a doutrina do chassi exige. Elas nasceram noutra
+   * linhagem de schema (extraction runs, LinkedIn, RPC de upsert de lead, AI
+   * Studio), foram aplicadas nos bancos daquele fork, e só entraram neste repo
+   * pelo import do chassi — nunca passaram pela tabela "Applied" do MANIFEST,
+   * que só começa a contar a partir da numeração sequencial.
+   *
+   * Estão DECLARADAS, não consertadas: escrever linhas de MANIFEST retroativas
+   * para elas inventaria um registro que nunca existiu, e renumerá-las trocaria
+   * o timestamp que o Supabase CLI usa como PK em bancos que já as aplicaram.
+   * A catraca continua valendo para tudo que nasce depois da convergência —
+   * migration nova sem linha reprova, como sempre.
+   */
+  semLinha: [
+    "00001_initial_schema",
+    // — herança do fork AIOS, pré-convergência —
+    "initial_schema",
+    "linkedin_schema",
+    "fix_rls_security",
+    "update_extraction_runs_constraints",
+    "add_tracking_columns_to_companies",
+    "tenancy_shim_platform_base",
+    "add_closed_loop_tracking_to_companies",
+    "create_rpc_upsert_lead",
+    "fix_rpc_upsert_lead_nullable_params",
+    "create_ai_studio_schema",
+  ],
 } as const;
 
 /**
