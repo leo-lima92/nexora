@@ -118,6 +118,12 @@ o summary do job. Se você mexeu em UI fora desse subconjunto, a prova é sua.
    aplica `baseline.sql` em modo install **e** update, roda os invariantes).
 4. Tocou UI ou fluxo de usuário → `pnpm test:e2e` com evidência visual. **`curl` não conta**
    como prova de UX (doutrina de QA Visual em `CLAUDE.md`).
+4b. Criou ou alterou **qualquer interface** (tela, componente, landing, e-mail, mock, imagem de
+   referência) — ou o usuário chamou `/design` → leia `docs/DESIGN_SYSTEM.md` **antes da primeira
+   linha de markup** e aplique estritamente. O checklist de aceite visual (§12, 15 pontos) é o
+   critério de "pronto". Valores concretos (paleta Sage, escala tipográfica, tokens) vêm de
+   `docs/design-system/` + `app/design/lib/tokens.ts`; o gosto e o anti-AI-slop vêm do
+   `DESIGN_SYSTEM.md`.
 5. Mudou schema → migration versionada em `supabase/migrations/` **+** apêndice idempotente
    em `supabase/baseline.sql` **+** linha em `supabase/migrations/MANIFEST.md`. Os três juntos.
 6. Criou função em `public` → `revoke execute on function ... from public, anon;` e depois

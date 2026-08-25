@@ -152,6 +152,8 @@ DeskcommCRM é um sistema operacional de vendas open source com agentes de IA na
 | `app/api/v1/health/route.ts` | Health check (Supabase + Redis + WAHA) |
 | `supabase/migrations/` | Schema versionado |
 | `docs/runbooks/deploy.md` | **Deploy em produção — leia ANTES de mexer na VPS** |
+| `docs/DESIGN_SYSTEM.md` | **Lei de gosto do Nexora — leia ANTES de criar qualquer interface** |
+| `docs/design-system/` | Especificação detalhada: tokens, paleta Sage, tipografia, componentes, anti-patterns |
 
 ---
 
@@ -225,6 +227,23 @@ O `e2e` entrou para a lista depois de este arquivo ter sido escrito. A versão a
 de falha nº 1 do procedimento de triagem. Reconfira na fonte antes de confiar em qualquer lista aqui.
 
 Ao mexer em schema, RLS, RBAC, atribuição, escopo, roteamento, follow-up, webhooks ou automações: rode `pnpm test:db` **localmente** antes de abrir PR. É o único caminho que exercita o `baseline.sql` que o self-hoster realmente aplica.
+
+---
+
+## Design System — DOUTRINA (NÃO NEGOCIÁVEL)
+
+**Sempre que o comando `/design` for usado, ou que qualquer interface for criada ou alterada, o agente DEVE consultar [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) e aplicar ESTRITAMENTE as suas regras.**
+
+"Interface" aqui é tudo que alguém vê: tela, componente, página de marketing, template de e-mail, mock, OG card, imagem de referência gerada. A leitura acontece **antes da primeira linha de markup**, não depois — regra lida no fim vira retrabalho.
+
+Como os dois documentos se dividem (precedência formal em `docs/DESIGN_SYSTEM.md` §0):
+
+- **`docs/DESIGN_SYSTEM.md`** — a lei de gosto: o que é proibido, hierarquia, whitespace macro, ritmo de seção, composição, anti-AI-slop, direção de imagem. Vence em toda decisão de gosto.
+- **`docs/design-system/00…09` + `app/design/lib/tokens.ts`** — a especificação: valores concretos de paleta, escala tipográfica, spacing, radius, durations. Vence em todo valor concreto.
+
+Nenhum dos dois é opcional, e nenhum substitui o outro. Componente que passa nos tokens mas viola a lei de gosto está reprovado; componente com bom gosto e hex inventado também.
+
+O §12 do `DESIGN_SYSTEM.md` é um **checklist de aceite de 15 pontos** — ele é o critério de "pronto" de toda entrega visual, e complementa (não substitui) a doutrina de QA Visual abaixo.
 
 ---
 
@@ -323,5 +342,6 @@ Antes de declarar uma task pronta:
 12. **Se tocou UI/fluxo de usuário: provado pela tela como um leigo faria**, em ambiente fresco estilo VPS, com evidência visual (ver Doutrina de QA Visual com Recursos Reais) — curl não conta
 13. **Living System Checklist respondido** (lei em `docs/doctrine/sistema-vivo.md`; racional no manual `docs/doctrine/sistema-vivo/`) — a feature não é ilha: tem entrada + saída, emite atividade/log, aparece na tela, tem porta na navegação, tem mecanismo anti-morte, **declara seu laço de retorno** (invariante 7 — o que muda no sistema quando ela erra), e o mapa vivo (`docs/architecture/`) reflete peça nova com ≥2 arestas. Resposta que não **nomeia o artefato concreto** (consumidor real, tela real, log real) não conta
 14. **Tela nova tem porta** — declarada em `lib/navigation/registry.ts` com seu grupo, ou na allowlist de `tests/unit/navegacao-completude.test.ts` **com justificativa escrita**. Ter tela e ser alcançável são coisas diferentes: o CI reprova tela que existe mas em que só se chega digitando a URL
+15. **Se tocou interface: `docs/DESIGN_SYSTEM.md` foi consultado e o checklist de aceite visual (§12, 15 pontos) responde "sim" em todos os itens** — inclusive a varredura literal de banidos (emoji, Inter/Lucide, `shadow-lg`, gradiente roxo-azul, `rounded-full` em card, copy clichê)
 
 Um staff engineer aprovaria? Se não, itera.
