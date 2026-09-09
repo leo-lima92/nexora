@@ -5855,6 +5855,10 @@ export const DICIONARIO: Traducoes = {
 
   // ─── Auth: login, cadastro, recuperação de senha, MFA, códigos de recuperação ───
   "Entrar": { es: "Entrar" },
+  "Use o e-mail da sua conta": { es: "Usa el correo de tu cuenta" },
+  "Atendimento e vendas por WhatsApp, num funil só.": {
+    es: "Atención y ventas por WhatsApp, en un solo embudo.",
+  },
   "Criar conta": { es: "Crear cuenta" },
   "Senha": { es: "Contraseña" },
   "Confirmar senha": { es: "Confirmar contraseña" },

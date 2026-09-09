@@ -69,7 +69,7 @@ export function ResetPasswordForm() {
           {...register("password")}
         />
         {errors.password && (
-          <p className="text-xs text-destructive">{t(errors.password.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.password.message ?? "")}</p>
         )}
       </div>
       <div className="space-y-1.5">
@@ -82,7 +82,7 @@ export function ResetPasswordForm() {
           {...register("password_confirm")}
         />
         {errors.password_confirm && (
-          <p className="text-xs text-destructive">{t(errors.password_confirm.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.password_confirm.message ?? "")}</p>
         )}
       </div>
       {needsMfa && (
@@ -101,7 +101,7 @@ export function ResetPasswordForm() {
       )}
       {serverError && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role={needsMfa ? "status" : "alert"}
         >
           {serverError}

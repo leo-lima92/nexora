@@ -29,13 +29,20 @@ export default async function LoginPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1.5 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("Entrar")}</h1>
-        <p className="text-sm text-muted-foreground">{branding().name}</p>
+      {/* A marca subiu para a casca pública (app/(public)/layout.tsx), acima do
+          cartão. O nome continua aqui, dentro da frase, porque
+          tests/e2e/icone-da-marca.spec.ts cruza este texto (que lê o .env) com o
+          título da aba (que lê o banco) — trocar a fonte deixaria a spec verde
+          medindo nada. */}
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-medium tracking-title text-text">{t("Entrar")}</h1>
+        <p className="text-sm text-text-muted">
+          {t("Use o e-mail da sua conta")} {branding().name}.
+        </p>
       </div>
       {reset === "success" && (
         <div
-          className="rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm"
+          className="rounded-md border border-success bg-success-bg px-3.5 py-2.5 text-sm text-success-fg"
           role="status"
         >
           {t("Senha redefinida com sucesso. Entre com a nova senha.")}
@@ -43,7 +50,7 @@ export default async function LoginPage({
       )}
       {error === "link_invalido" && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {t("Link inválido ou expirado. Peça um novo em Recuperar senha ou refaça o cadastro.")}
@@ -56,7 +63,7 @@ export default async function LoginPage({
       */}
       {error === "convite_invalido" && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {t(
@@ -66,7 +73,7 @@ export default async function LoginPage({
       )}
       {error === "template_padrao" && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {t(
@@ -78,7 +85,7 @@ export default async function LoginPage({
       )}
       {error === "provisionamento" && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {t(
@@ -87,20 +94,22 @@ export default async function LoginPage({
         </div>
       )}
       <LoginForm next={next} />
-      <div className="space-y-2 text-center text-sm">
+      {/* Alinhado à ESQUERDA como o título e os campos; separado por hairline
+          porque são portas para OUTRAS telas, não parte do formulário. */}
+      <div className="space-y-2 border-t border-border pt-5 text-sm">
         <p>
           <Link
             href="/login/forgot"
-            className="text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            className="text-text-muted underline underline-offset-4 transition-colors duration-fast hover:text-text"
           >
             {t("Esqueci minha senha")}
           </Link>
         </p>
-        <p className="text-muted-foreground">
+        <p className="text-text-muted">
           {t("Não tem conta?")}{" "}
           <Link
             href="/signup"
-            className="font-medium text-foreground underline underline-offset-4"
+            className="font-medium text-text underline underline-offset-4 transition-colors duration-fast hover:text-accent"
           >
             {t("Criar conta")}
           </Link>

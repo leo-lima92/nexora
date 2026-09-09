@@ -39,9 +39,9 @@ export default async function SignupPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1.5 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">{t("Criar conta")}</h1>
-        <p className="text-sm text-muted-foreground">
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-medium tracking-title text-text">{t("Criar conta")}</h1>
+        <p className="text-sm text-text-muted">
           {convite
             ? t("Crie sua senha para entrar na empresa que te convidou")
             : `${t("Comece a usar o")} ${branding().name} ${t("em minutos")}`}
@@ -61,9 +61,9 @@ export default async function SignupPage({
 
       <SignupForm convite={convite} />
 
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="border-t border-border pt-5 text-sm text-text-muted">
         {t("Já tem conta?")}{" "}
-        <Link href="/login" className="font-medium text-foreground underline underline-offset-4">
+        <Link href="/login" className="font-medium text-text underline underline-offset-4 transition-colors duration-fast hover:text-accent">
           {t("Entrar")}
         </Link>
       </p>

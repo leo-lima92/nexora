@@ -10,18 +10,25 @@ import { cn } from "@/lib/utils";
  */
 const badgeVariants = cva(
   [
-    "inline-flex items-center gap-1 rounded-full border px-3 py-0.5",
-    "text-xs font-medium leading-5",
+    // RAIO 8px, NUNCA PÍLULA: a etiqueta é onde o reflexo de arredondar até virar
+    // cápsula aparece, e `rounded-full` reintroduziria uma segunda linguagem de
+    // forma por causa de um elemento de 20px. O default é OUTLINE: no deck
+    // acromático a etiqueta é classificação, não alarme — quem preenche é o
+    // estado semântico.
+    "inline-flex items-center gap-1 rounded-md border px-2 py-0.5",
+    "text-xs font-medium uppercase leading-4 tracking-eyebrow",
     "transition-colors duration-fast ease-out",
-    "focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2",
+    "focus:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
   ].join(" "),
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-accent-soft text-accent",
-        neutral:
-          "border-border bg-surface-elevated text-text-muted",
+        default: "border-border-strong bg-transparent text-text-muted",
+        neutral: "border-border bg-surface-elevated text-text-muted",
+        // Contador (não-lidas, fila): chapa de tinta, número em mono. Único lugar
+        // em que o badge inverte — e sem tocar na vermillion, que é da ação.
+        counter:
+          "border-transparent bg-text px-1.5 font-mono text-[11px] tabular-nums text-surface",
         success:
           "border-transparent bg-success-bg text-success-fg",
         warning:
@@ -36,7 +43,7 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-error-bg text-error-fg",
         outline:
-          "border-border bg-transparent text-text",
+          "border-border-strong bg-transparent text-text-muted",
       },
     },
     defaultVariants: {

@@ -70,7 +70,7 @@ export function LoginForm({ next }: { next?: string }) {
           {...register("email")}
         />
         {errors.email && (
-          <p className="text-xs text-destructive">{t(errors.email.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.email.message ?? "")}</p>
         )}
       </div>
       <div className="space-y-1.5">
@@ -83,18 +83,18 @@ export function LoginForm({ next }: { next?: string }) {
           {...register("password")}
         />
         {errors.password && (
-          <p className="text-xs text-destructive">{t(errors.password.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.password.message ?? "")}</p>
         )}
       </div>
       {serverError && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {serverError}
         </div>
       )}
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" variant="cta" size="lg" className="w-full" disabled={isPending}>
         {isPending ? t("Entrando...") : t("Entrar")}
       </Button>
     </form>

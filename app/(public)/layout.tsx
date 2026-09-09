@@ -1,5 +1,8 @@
+import { BrandMark } from "@/components/shell/BrandMark";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
+import { traduzir } from "@/lib/i18n/dicionario";
+import { normalizarIdioma } from "@/lib/i18n/idiomas";
 import { IdiomaProvider } from "@/lib/i18n/IdiomaProvider";
 
 /**
@@ -41,14 +44,19 @@ export default async function PublicLayout({ children }: { children: React.React
     data: { user },
   } = await supabase.auth.getUser();
   const locale = (user?.user_metadata?.locale as string | undefined) ?? null;
+  const idioma = normalizarIdioma(locale);
 
   return (
     <IdiomaProvider locale={locale}>
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-sm space-y-6">
-          {marca.logoUrl && (
-            <div className="flex justify-center">
-              {/*
+      {/* Gramática do deck (docs/DESIGN_SYSTEM.md): cartão de Paper com hairline
+          sobre o Vellum da página, a marca ACIMA do cartão (ela apresenta o
+          produto, não é um campo do formulário) e uma nota discreta no rodapé.
+          400px em vez de `max-w-sm` (384px) porque o cartão tem 40px de padding
+          de cada lado — mantendo 384px a linha útil do formulário encolhia 80px. */}
+      <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-6 py-12">
+        <div className="w-full max-w-[400px]">
+          <div className="mb-8 flex items-center justify-center gap-2.5">
+            {/*
                 <img> em vez de next/image pelo mesmo motivo da barra lateral: a URL
                 é de quem hospeda e o `next/image` exige allowlist de domínios
                 fechada em BUILD — a imagem pré-buildada do self-host recusaria o
@@ -64,16 +72,31 @@ export default async function PublicLayout({ children }: { children: React.React
                 "primeira <img> da página", e uma asserção de negação com seletor
                 largo passa sozinha assim que outra imagem entra na tela.
               */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+            {marca.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 data-testid="logo-da-fachada"
                 src={marca.logoUrl}
                 alt={marca.nome}
-                className="h-10 w-auto max-w-[12rem] object-contain"
+                className="h-7 w-auto max-w-[12rem] object-contain"
               />
-            </div>
-          )}
-          {children}
+            ) : (
+              <>
+                <BrandMark size={18} className="text-text" />
+                <span className="text-[17px] font-semibold tracking-title text-text">
+                  {marca.nome}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-md border border-border bg-surface p-10 shadow-subtle">
+            {children}
+          </div>
+
+          <p className="mt-6 text-center text-xs text-text-subtle">
+            {traduzir("Atendimento e vendas por WhatsApp, num funil só.", idioma)}
+          </p>
         </div>
       </div>
     </IdiomaProvider>

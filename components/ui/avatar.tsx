@@ -12,7 +12,10 @@ const Avatar = React.forwardRef<
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
-      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
+      // Avatar QUADRADO de 8px, não círculo. A referência padroniza um raio
+      // único no sistema inteiro; um círculo aqui seria a única forma
+      // divergente da tela, e o olho encontra isso antes de encontrar o nome.
+      "relative flex h-10 w-10 shrink-0 overflow-hidden rounded-md",
       className
     )}
     {...props}
@@ -39,7 +42,9 @@ const AvatarFallback = React.forwardRef<
   <AvatarPrimitive.Fallback
     ref={ref}
     className={cn(
-      "flex h-full w-full items-center justify-center rounded-full bg-muted",
+      "flex h-full w-full items-center justify-center rounded-md",
+      "border border-border bg-surface-elevated",
+      "font-mono text-[11px] font-medium uppercase tracking-eyebrow text-text-muted",
       className
     )}
     {...props}

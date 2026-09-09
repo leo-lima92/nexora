@@ -8,11 +8,14 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-sm border border-border bg-bg px-4 py-2",
-          "text-sm text-text placeholder:text-text-muted",
-          "transition-[border-color,box-shadow] duration-fast ease-out",
-          "hover:border-border-strong",
-          "focus-visible:outline-hidden focus-visible:border-accent-500 focus-visible:ring-2 focus-visible:ring-accent-soft",
+          // 44px: alvo de toque confortável. O campo vive em Paper com hairline
+          // Cloud — no foco a borda ESCURECE para tinta, sem brilho e sem cor:
+          // foco não é ação, e vermillion aqui seria ruído.
+          "flex h-11 w-full rounded-md border border-border-strong bg-surface px-4 py-2",
+          "text-sm text-text placeholder:text-text-subtle",
+          "transition-[border-color] duration-fast ease-out",
+          "hover:border-iron",
+          "focus-visible:border-text focus-visible:outline-hidden",
           "file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-text",
           "disabled:cursor-not-allowed disabled:opacity-55",
           "aria-[invalid=true]:border-error aria-[invalid=true]:focus-visible:ring-error-bg",

@@ -16,7 +16,7 @@ export function AppShell({ sidebarCollapsed, children }: AppShellProps) {
   useCrmAlerts();
   useNotifyOpenFromServiceWorker();
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full bg-bg">
       <div className="hidden md:block">
         <Sidebar collapsed={sidebarCollapsed} />
       </div>

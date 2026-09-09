@@ -109,7 +109,7 @@ export function SignupForm({ convite }: { convite?: ConviteDoSignup }) {
         role="status"
       >
         <p className="text-sm font-medium">{t("Confirme seu e-mail")}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-text-muted">
           {t("Enviamos um link de confirmação para")} <strong>{sentTo}</strong>.{" "}
           {t("Abra o e-mail e clique no link para ativar sua conta.")}
         </p>
@@ -131,7 +131,7 @@ export function SignupForm({ convite }: { convite?: ConviteDoSignup }) {
           {...register("org_name")}
         />
         {errors.org_name && (
-          <p className="text-xs text-destructive">{t(errors.org_name.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.org_name.message ?? "")}</p>
         )}
       </div>
       )}
@@ -148,7 +148,7 @@ export function SignupForm({ convite }: { convite?: ConviteDoSignup }) {
           {...register("email")}
         />
         {errors.email && (
-          <p className="text-xs text-destructive">{t(errors.email.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.email.message ?? "")}</p>
         )}
       </div>
       <div className="space-y-1.5">
@@ -161,7 +161,7 @@ export function SignupForm({ convite }: { convite?: ConviteDoSignup }) {
           {...register("password")}
         />
         {errors.password && (
-          <p className="text-xs text-destructive">{t(errors.password.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.password.message ?? "")}</p>
         )}
       </div>
       <div className="space-y-1.5">
@@ -174,18 +174,18 @@ export function SignupForm({ convite }: { convite?: ConviteDoSignup }) {
           {...register("password_confirm")}
         />
         {errors.password_confirm && (
-          <p className="text-xs text-destructive">{t(errors.password_confirm.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.password_confirm.message ?? "")}</p>
         )}
       </div>
       {serverError && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {serverError}
         </div>
       )}
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" variant="cta" size="lg" className="w-full" disabled={isPending}>
         {isPending ? t("Criando conta...") : t("Criar conta")}
       </Button>
     </form>

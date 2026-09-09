@@ -51,7 +51,7 @@ export function ForgotPasswordForm() {
         role="status"
       >
         <p className="text-sm font-medium">{t("Verifique seu e-mail")}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-text-muted">
           {t("Se existir uma conta com esse e-mail, enviamos um link para redefinir a senha.")}
         </p>
       </div>
@@ -71,12 +71,12 @@ export function ForgotPasswordForm() {
           {...register("email")}
         />
         {errors.email && (
-          <p className="text-xs text-destructive">{t(errors.email.message ?? "")}</p>
+          <p className="text-xs text-error-fg">{t(errors.email.message ?? "")}</p>
         )}
       </div>
       {serverError && (
         <div
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {serverError}

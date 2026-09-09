@@ -114,7 +114,7 @@ export function SidebarContent({
     <>
       <div
         className={cn(
-          "flex h-14 items-center border-b px-4",
+          "flex h-14 items-center border-b border-border px-5",
           collapsed ? "justify-center" : "justify-start",
         )}
       >
@@ -127,10 +127,10 @@ export function SidebarContent({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logo} alt={nome} className="h-7 w-auto max-w-[10rem] object-contain" />
         ) : (
-          <span className={cn("font-semibold tracking-tight", collapsed && "sr-only")}>{nome}</span>
+          <span className={cn("text-[17px] font-semibold tracking-title text-text", collapsed && "sr-only")}>{nome}</span>
         )}
         {collapsed && (
-          <span aria-hidden className="text-lg font-bold text-primary">
+          <span aria-hidden className="text-lg font-semibold tracking-title text-accent">
             {/* Spread e não `[0]`: nome começando com emoji ou acento composto
                 quebraria no meio do code point. Mesma regra de `resolveBranding`
                 — a inicial precisa acompanhar o nome que a barra mostra, senão
@@ -195,14 +195,14 @@ export function SidebarContent({
               {/* Colapsado, o sidebar tem 64px: seis rótulos ali seriam ilegíveis.
                   Vira um filete separador, que preserva o agrupamento sem texto. */}
               {collapsed ? (
-                <div aria-hidden className="mx-2 border-t first:hidden" />
+                <div aria-hidden className="mx-2 border-t border-border first:hidden" />
               ) : (
                 <h2 id={tituloId}>
                   <button
                     type="button"
                     onClick={() => toggleGrupo(group.id)}
                     aria-expanded={aberto}
-                    className="flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent/40 hover:text-foreground"
+                    className="flex w-full items-center justify-between rounded-md px-3 py-1 text-xs font-medium uppercase tracking-eyebrow text-text-subtle transition-colors duration-fast ease-out hover:bg-surface-elevated hover:text-text"
                   >
                     {t(group.label)}
                     <CaretDown
@@ -234,14 +234,19 @@ export function SidebarContent({
                           aria-current={isActive ? "page" : undefined}
                           onClick={onNavigate}
                           className={cn(
-                            "relative flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
+                            "relative flex items-center gap-2.5 rounded-md px-3 py-1 text-sm transition-colors duration-fast ease-out",
                             isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                              ? "bg-surface-elevated font-medium text-text"
+                              : "text-text-muted hover:bg-surface-elevated hover:text-text",
                             collapsed && "justify-center px-2",
                           )}
                         >
-                          <Icon size={18} weight={isActive ? "fill" : "regular"} aria-hidden />
+                          <Icon
+                            size={17}
+                            weight={isActive ? "fill" : "regular"}
+                            aria-hidden
+                            className={isActive ? "text-accent" : "text-text-subtle"}
+                          />
                           {!collapsed && <span className="truncate">{t(item.label)}</span>}
                           {item.healthDot && (
                             <ConnectionHealthDot
@@ -260,14 +265,14 @@ export function SidebarContent({
                         aria-current={pathname === group.hub.href ? "page" : undefined}
                         onClick={onNavigate}
                         className={cn(
-                          "flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
+                          "flex items-center gap-2.5 rounded-md px-3 py-1 text-sm transition-colors duration-fast ease-out",
                           pathname === group.hub.href
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                            ? "bg-surface-elevated font-medium text-text"
+                            : "text-text-muted hover:bg-surface-elevated hover:text-text",
                           collapsed && "justify-center px-2",
                         )}
                       >
-                        <ArrowRight size={18} aria-hidden />
+                        <ArrowRight size={17} aria-hidden className="text-text-subtle" />
                         {!collapsed && <span className="truncate">{t(group.hub.label)}</span>}
                       </Link>
                     </li>
@@ -278,7 +283,7 @@ export function SidebarContent({
           );
         })}
       </nav>
-      <div className="border-t p-2">
+      <div className="border-t border-border p-2">
         {rodape && (
           <Link
             href={rodape.href}
@@ -286,14 +291,14 @@ export function SidebarContent({
             aria-current={pathname.startsWith(rodape.href) ? "page" : undefined}
             onClick={onNavigate}
             className={cn(
-              "mb-1 flex items-center gap-3 rounded-md px-3 py-1 text-sm transition-colors",
+              "mb-1 flex items-center gap-2.5 rounded-md px-3 py-1 text-sm transition-colors duration-fast ease-out",
               pathname.startsWith(rodape.href)
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                ? "bg-surface-elevated font-medium text-text"
+                : "text-text-muted hover:bg-surface-elevated hover:text-text",
               collapsed && "justify-center px-2",
             )}
           >
-            <Gear size={18} aria-hidden />
+            <Gear size={17} aria-hidden className="text-text-subtle" />
             {!collapsed && <span className="truncate">{t(rodape.label)}</span>}
           </Link>
         )}
@@ -304,7 +309,7 @@ export function SidebarContent({
             onClick={() => startTransition(() => toggleSidebar(collapsed))}
             disabled={isPending}
             className={cn(
-              "flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              "flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs uppercase tracking-eyebrow text-text-subtle transition-colors duration-fast ease-out hover:bg-surface-elevated hover:text-text",
               collapsed && "justify-center px-2",
             )}
             aria-label={collapsed ? t("Expandir sidebar") : t("Recolher sidebar")}
@@ -345,7 +350,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         //
         // `shrink-0` porque item de flex encolhe por padrão, e uma barra de 60
         // espremida para caber é o mesmo defeito por outro caminho.
-        "sticky top-0 z-30 flex h-screen shrink-0 flex-col border-r bg-card transition-[width] duration-200",
+        "sticky top-0 z-30 flex h-screen shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200",
         collapsed ? "w-16" : "w-60",
       )}
     >

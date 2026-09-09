@@ -63,8 +63,8 @@ export function NavHub({
   return (
     <div className="flex h-full flex-col gap-8 p-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{traduzir(title, locale)}</h1>
-        {subtitle && <p className="text-sm text-muted-foreground">{traduzir(subtitle, locale)}</p>}
+        <h1 className="text-2xl font-medium tracking-title text-text">{traduzir(title, locale)}</h1>
+        {subtitle && <p className="mt-1.5 max-w-2xl text-sm leading-normal text-text-muted">{traduzir(subtitle, locale)}</p>}
       </header>
 
       {secoes.map(({ section, items }) => (
@@ -75,25 +75,25 @@ export function NavHub({
         >
           <h2
             id={`hub-${group}-${slug(section)}`}
-            className="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+            className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle"
           >
             {traduzir(section, locale)}
           </h2>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => {
               const Icon = item.icon;
               return (
                 <Link key={item.href} href={item.href} className="block">
-                  <Card className="flex h-full gap-3 p-4 transition-colors hover:border-border-strong">
+                  <Card className="flex h-full gap-3 p-6 shadow-none transition-colors duration-fast ease-out hover:border-border-strong">
                     <Icon
                       size={20}
                       weight="regular"
                       aria-hidden
-                      className="mt-0.5 shrink-0 text-muted-foreground"
+                      className="mt-0.5 shrink-0 text-text-subtle"
                     />
                     <div>
-                      <h3 className="text-sm font-semibold">{traduzir(item.label, locale)}</h3>
-                      <p className="mt-1 text-xs text-muted-foreground">
+                      <h3 className="text-sm font-medium tracking-title text-text">{traduzir(item.label, locale)}</h3>
+                      <p className="mt-1.5 text-xs leading-normal text-text-muted">
                         {traduzir(item.description, locale)}
                       </p>
                     </div>
