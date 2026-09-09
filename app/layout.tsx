@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Atkinson_Hyperlegible, IBM_Plex_Mono } from "next/font/google";
+import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
 import { coresDaBarraDoNavegador } from "@/lib/branding/barra-do-navegador";
@@ -25,11 +25,16 @@ import { Providers } from "./providers";
 import { PublicEnvScript } from "./public-env-script";
 import "./globals.css";
 
-const atkinson = Atkinson_Hyperlegible({
+/**
+ * Archivo — o grotesco de trabalho do deck Orderful (docs/DESIGN_SYSTEM.md §2).
+ * Inter, Roboto, Open Sans, Geist e Space Grotesk são BANIDAS por doutrina; o
+ * fallback do `--font-sans` (app/globals.css) cai direto no `system-ui`.
+ */
+const archivo = Archivo({
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "700"],
+  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
-  variable: "--font-atkinson",
+  variable: "--font-archivo",
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -278,7 +283,7 @@ export default function RootLayout({
       lang="pt-BR"
       data-theme="light"
       suppressHydrationWarning
-      className={`${atkinson.variable} ${plexMono.variable}`}
+      className={`${archivo.variable} ${plexMono.variable}`}
     >
       <head>
         {/* Primeiro de tudo: a cor da instalação, antes do CSS e do script de tema. */}

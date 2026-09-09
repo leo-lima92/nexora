@@ -47,7 +47,8 @@ const SEMENTES = [
 ] as const;
 
 /** Quantos pares cada tema tem no globals.css de hoje — o piso da vacuidade. */
-const PARES_DE_HOJE = { claro: 18, escuro: 26 } as const;
+// Orderful: foco/seleção/anel são tinta, não accent — 3 papéis na régua, não 6.
+const PARES_DE_HOJE = { claro: 9, escuro: 13 } as const;
 
 const TEMAS = [
   { nome: "claro" as const, seletor: ":root:root" },

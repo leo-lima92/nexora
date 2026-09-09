@@ -110,7 +110,11 @@ describe("extrairRegua — os pares saem do globals.css, nunca de lista à mão"
     // razões diferem (4,99 · 4,59 · 4,02). Medir uma só escolheria a mais folgada.
     expect(superficiesDoTema(REGUA.escuro, REGUA.rampaDoProduto, 0)).toHaveLength(6);
 
-    expect(medirPares(REGUA.claro, REGUA.rampaDoProduto, 0)).toHaveLength(18);
+    // Orderful (docs/DESIGN_SYSTEM.md): foco, seleção e anel são TINTA, não accent —
+    // `--ring`, `::selection` e `:focus-visible` deixaram de referenciar a rampa e saíram
+    // da régua. Sobram 3 papéis (accent, hover, accent-fg): 9 pares no claro (3 papéis ×
+    // {bg, surface, elevated, soft}) e 13 no escuro (o soft translúcido vira 3 superfícies).
+    expect(medirPares(REGUA.claro, REGUA.rampaDoProduto, 0)).toHaveLength(9);
     expect(medirPares(REGUA.escuro, REGUA.rampaDoProduto, 0)).toHaveLength(26);
   });
 
@@ -204,7 +208,7 @@ describe("derivarMarca — as 16 sementes adversariais", () => {
       for (const tema of [marca.claro, marca.escuro] as const) {
         // Guarda de vacuidade POR SEMENTE: um `pares: []` faria o filtro abaixo devolver
         // lista vazia e o teste passar sem ter medido nada.
-        expect(tema.pares.length, `${semente}: nenhum par medido`).toBeGreaterThanOrEqual(18);
+        expect(tema.pares.length, `${semente}: nenhum par medido`).toBeGreaterThanOrEqual(9);
         const reprovas = tema.pares.filter((p) => !p.passa);
         expect(
           reprovas,

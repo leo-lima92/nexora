@@ -34,8 +34,10 @@ describe("régua congelada em módulo", () => {
     // acima contra um módulo igualmente vazio, e a derivação inteira mediria
     // nada. Os números vêm do mesmo commit que `branding-contraste.test.ts`.
     expect(REGUA_DO_PRODUTO.rampaDoProduto).toHaveLength(11);
-    expect(REGUA_DO_PRODUTO.claro.papeis).toHaveLength(6);
-    expect(REGUA_DO_PRODUTO.escuro.papeis).toHaveLength(6);
+    // Orderful: foco, seleção e anel são tinta, não accent — a régua tem 3 papéis por tema
+    // (accent, hover, accent-fg), não os 6 da Sage.
+    expect(REGUA_DO_PRODUTO.claro.papeis).toHaveLength(3);
+    expect(REGUA_DO_PRODUTO.escuro.papeis).toHaveLength(3);
     expect(REGUA_DO_PRODUTO.claro.base).toHaveLength(3);
     expect(REGUA_DO_PRODUTO.escuro.semanticas).toHaveLength(4);
   });

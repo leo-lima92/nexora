@@ -24,73 +24,103 @@
    coisas que no v3 ele não vencia. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* ─────────────────────────────────────────────────────────────────────────
-   DeskcommCRM — Design System tokens (Sage palette · density Aerada)
-   Source of truth: /app/design/lib/tokens.ts (PALETTES.sage)
-   Light + dark drawn separately (NOT inverted).
+/* ───────────────────────────────────────────────────────────────────────────
+   Nexora — Design System tokens · "Orderful command deck"
+
+   Reskin premium aprovado em 2026-09-01, portado para o Tailwind 4 sobre a
+   base upstream v1.17.0. Direção: superfície acromática de papel matte,
+   tipografia editorial em Archivo, e UMA cor de ação (vermillion) tratada como
+   recurso escasso — ela marca o que converte, nunca o que decora.
+
+   Lei de gosto: docs/DESIGN_SYSTEM.md (vence em composição). Estes tokens
+   vencem em valor concreto (§0). Referência: docs/ORDERFUL_REF.md.
+
+   Light e dark são DESENHADOS SEPARADAMENTE, nunca um é a inversão do outro:
+   o claro é papel sobre papel; o escuro é chapa de carbono sob luz rasante.
+   A rampa do accent é a MESMA nos dois temas e o accent muda de PARADA — é o
+   contrato que lib/branding/contraste.ts (a régua de contraste da marca do
+   revendedor) exige para derivar a marca de quem instala.
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Surfaces (light) */
-  --color-bg: #faf9f6;
+  /* Superfícies (light) — Vellum canvas, Paper card */
+  --color-bg: #f5f5f5;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
+  --color-surface-elevated: #f5f5f5;
+  --color-surface-sunken: #fafafa;
+  --color-carbon: #1f1f1f;
+  --color-ink: #000000;
+  --color-overlay: rgba(16, 24, 40, 0.45);
 
-  /* Text (light) */
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
+  /* Texto (light) — Slate 900 / Slate 600 / Steel */
+  --color-text: #101828;
+  --color-text-muted: #4a5565;
+  --color-text-subtle: #676767;
+  --color-text-on-carbon: #ffffff;
+  /* Mist NÃO é cor de texto: #99a1af sobre Paper dá 2.6:1 e reprova em AA.
+     Fica onde é gráfica — borda de ícone, divisor, marca desativada. */
+  --color-mist: #99a1af;
+  --color-iron: #8a8a8a;
 
-  /* Borders (light) */
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  /* Bordas (light) — Frost hairline, Cloud campo/botão */
+  --color-border: #e5e7eb;
+  --color-border-strong: #d4d4d4;
 
-  /* Accent — Sage (11 stops) */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
+  /* Accent — Vermillion Signal (11 paradas; 600 é o valor canônico #e42b0c) */
+  --color-accent-50: #fef4f1;
+  --color-accent-100: #fde3db;
+  --color-accent-200: #fbc4b4;
+  --color-accent-300: #f89d84;
+  --color-accent-400: #f2704e;
+  --color-accent-500: #ea4b26;
+  --color-accent-600: #e42b0c;
+  --color-accent-700: #bd2109;
+  --color-accent-800: #951a07;
+  --color-accent-900: #6e1305;
+  --color-accent-950: #3d0a03;
   --color-accent: var(--color-accent-600);
+  /* 4.52:1 sobre #e42b0c — passa AA com folga de 0.02. Não confie no número de
+     cabeça: tests/unit/contraste-acao-wcag.test.ts recalcula a cada CI. */
   --color-accent-fg: #ffffff;
-  --color-accent-soft: var(--color-accent-100);
+  --color-accent-soft: var(--color-accent-50);
   --color-accent-hover: var(--color-accent-700);
+  /* Texto do CTA, separado do accent-fg: gradiente e botão sólido não trocam
+     de polaridade juntos (ver o bloco escuro). */
+  --color-cta-fg: #ffffff;
+  /* Sunset Flux — o único gradiente permitido (DESIGN_SYSTEM §4). Stops de
+     saturação total um degrau abaixo do 600: vibrante, não terra. Medido com
+     branco por cima: 4.62:1 no pior ponto da interpolação. Numa linha só de
+     propósito: o espelho claro/escuro e a régua leem prop:valor por linha. */
+  --gradient-vermillion: linear-gradient(94deg, rgb(222, 42, 11) -33.85%, rgb(212, 64, 0) -1.54%, rgb(222, 42, 11) 73.55%);
 
-  /* Neutrals — greige (11 stops, light) */
-  --color-neutral-50:  #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
+  /* Neutros — rampa acromática (light) */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #99a1af;
+  --color-neutral-500: #8a8a8a;
+  --color-neutral-600: #676767;
+  --color-neutral-700: #4a5565;
+  --color-neutral-800: #364153;
+  --color-neutral-900: #101828;
+  --color-neutral-950: #000000;
 
-  /* States (light) */
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
-  --color-warning: #b07a2b;
-  --color-warning-bg: rgba(176, 122, 43, 0.12);
-  --color-warning-fg: #875a1a;
-  --color-error: #a94a3c;
-  --color-error-bg: rgba(169, 74, 60, 0.12);
-  --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
+  /* Estados (light) — dessaturados: o estado não compete com a vermillion */
+  --color-success: #346538;
+  --color-success-bg: #edf3ec;
+  --color-success-fg: #2a5230;
+  --color-warning: #956400;
+  --color-warning-bg: #fbf3db;
+  --color-warning-fg: #7a5200;
+  --color-error: #9f2f2d;
+  --color-error-bg: #fdebec;
+  --color-error-fg: #8a2725;
+  --color-info: #1f6c9f;
+  --color-info-bg: #e1f3fe;
+  --color-info-fg: #195883;
 
-  /* Spacing (4-base) */
+  /* Espaçamento (base 4) */
   --space-0: 0px;
   --space-1: 4px;
   --space-2: 8px;
@@ -106,28 +136,34 @@
   --space-24: 96px;
   --space-32: 128px;
 
-  /* Radius */
+  /* Raio — UM raio (8px). --radius-full só para o que é geometricamente
+     redondo: marca de status e spinner. */
   --radius-none: 0px;
-  --radius-sm: 4px;
+  --radius-sm: 8px;
   --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
   --radius-full: 9999px;
 
-  /* Shadows — desaturated, neutral-based */
-  --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
-  --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.10), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  /* Sombras — neutras; em repouso a profundidade vem da hairline */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.14), 0 4px 10px -2px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18), 0 8px 16px -4px rgba(0, 0, 0, 0.1);
 
-  /* Density — Aerada */
+  /* Densidade */
   --density-row: 56px;
-  --density-gap: 24px;
+  --density-gap: 16px;
   --density-px: 20px;
   --density-py: 16px;
 
-  /* Motion */
+  /* Tracking editorial */
+  --tracking-display: -0.03em;
+  --tracking-title: -0.025em;
+  --tracking-eyebrow: 0.3px;
+
+  /* Movimento */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-in-out: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -143,7 +179,7 @@
   --z-modal: 40;
   --z-toast: 50;
 
-  /* shadcn-compat aliases (mantém consumers legados funcionando) */
+  /* shadcn-compat aliases */
   --background: var(--color-bg);
   --foreground: var(--color-text);
   --card: var(--color-surface);
@@ -160,60 +196,22 @@
   --destructive: var(--color-error);
   --destructive-foreground: #ffffff;
   --border: var(--color-border);
-  --input: var(--color-border);
-  --ring: var(--color-accent-500);
+  --input: var(--color-border-strong);
+  /* Foco é texto, não ação: vermillion no anel de foco está fora de questão. */
+  --ring: var(--color-text);
   --radius: var(--radius-md);
-  /* ---- Agenda · cor de pessoa (8 trilhas) ------------------------------
-   * Quem é o dono do compromisso é o eixo visual da grade, e a accent NÃO
-   * serve para isso: ela é substituída em runtime pelo revendedor
-   * (`<style id="marca-instalacao">` no layout), então uma agenda pintada
-   * com ela ficaria monocromática — e azul — na instalação que comprou a
-   * marca em azul.
-   *
-   * OS VALORES SÃO DERIVADOS, NÃO ESCOLHIDOS A OLHO — e a primeira versão
-   * destas linhas dizia "os matizes saem de Okabe-Ito", o que a medição
-   * desmentiu: eu tinha ajustado tanto a luminosidade que a separação da
-   * referência não sobreviveu. Medido no par mais próximo, em OKLab:
-   *
-   *     versão anterior (azul x petróleo) : 0.0507   <- indistinguíveis
-   *     Okabe-Ito, a referência (n=7)     : 0.1558
-   *     esta versão, pior par             : 0.1162
-   *
-   * A régua é a distância OKLab entre os pares, e ela vem da própria
-   * referência em vez de um número inventado. Não alcançamos os 0.1558 dela
-   * por duas razões declaradas: são OITO trilhas no espaço em que ela põe
-   * sete, e o croma fica limitado a 0.13 porque este produto é para quem
-   * encara a tela oito horas por dia — a Okabe-Ito não tem essa restrição.
-   *
-   * Os matizes (30 70 100 190 225 262 300 340) são espalhados de propósito, e
-   * não pelo que maximiza a distância: uma busca livre chegou a 0.1155 pondo
-   * TRÊS trilhas na faixa dos roxos. Distância mede distinguibilidade e não
-   * mede NOMEABILIDADE — "o roxo da Ana" e "o roxo do Bruno" não servem numa
-   * equipe. Por isso Telha, Âmbar, Oliva, Turquesa, Azul, Índigo, Violeta,
-   * Framboesa: oito palavras diferentes.
-   *
-   * A faixa 113-165 é vetada: é onde mora a accent Sage (139 graus). Cor de
-   * PESSOA não pode ser confundida com cor de ESTADO do sistema.
-   *
-   * A luminosidade ALTERNA entre vizinhos, que é o truque da Okabe-Ito para
-   * separar o azul-céu do azul — e foi exatamente o que a minha versão
-   * anterior perdeu ao uniformizar o brilho.
-   *
-   * MESMO ASSIM, cor nunca é a única informação: todo lugar que usa uma
-   * destas trilhas carrega junto a inicial da pessoa.
-   *
-   * O fundo suave de cada bloco é derivado com `color-mix` no ponto de uso,
-   * não duplicado aqui — assim a relação entre a faixa e o fundo é uma só,
-   * e não dois hex que envelhecem separados.
-   */
-  --agenda-pessoa-1: #ac4d40;   /* telha */
-  --agenda-pessoa-2: #bd7c20;   /* âmbar */
-  --agenda-pessoa-3: #7e6f01;   /* oliva */
-  --agenda-pessoa-4: #11a19b;   /* turquesa */
-  --agenda-pessoa-5: #0b7a9a;   /* azul */
-  --agenda-pessoa-6: #608bda;   /* índigo */
-  --agenda-pessoa-7: #7b5bad;   /* violeta */
-  --agenda-pessoa-8: #cc77b1;   /* framboesa */
+
+  /* Agenda · cor de pessoa (8 trilhas). Valores herdados do upstream — a
+     derivação em OKLab está documentada lá. ATENÇÃO: a trilha 1 (telha, ~8°)
+     vizinha o matiz da vermillion; reavaliar no passo de componentes. */
+  --agenda-pessoa-1: #ac4d40;
+  --agenda-pessoa-2: #bd7c20;
+  --agenda-pessoa-3: #7e6f01;
+  --agenda-pessoa-4: #11a19b;
+  --agenda-pessoa-5: #0b7a9a;
+  --agenda-pessoa-6: #608bda;
+  --agenda-pessoa-7: #7b5bad;
+  --agenda-pessoa-8: #cc77b1;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
@@ -250,47 +248,55 @@
    (lib/branding/css.ts), que só ganha consumidor com a tela de marca.
    ───────────────────────────────────────────────────────────────────────── */
 [data-theme="light"] {
-  --color-bg: #faf9f6;
+  --color-bg: #f5f5f5;
   --color-surface: #ffffff;
-  --color-surface-elevated: #f5f3ee;
-  --color-overlay: rgba(28, 26, 22, 0.42);
-  --color-text: #1c1a16;
-  --color-text-muted: #5d594f;
-  --color-text-subtle: #7d786c;
-  --color-border: #e7e3da;
-  --color-border-strong: #d2cdbf;
+  --color-surface-elevated: #f5f5f5;
+  --color-surface-sunken: #fafafa;
+  --color-carbon: #1f1f1f;
+  --color-ink: #000000;
+  --color-overlay: rgba(16, 24, 40, 0.45);
+  --color-text: #101828;
+  --color-text-muted: #4a5565;
+  --color-text-subtle: #676767;
+  --color-text-on-carbon: #ffffff;
+  --color-mist: #99a1af;
+  --color-iron: #8a8a8a;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d4d4d4;
   --color-accent: var(--color-accent-600);
   --color-accent-fg: #ffffff;
-  --color-accent-soft: var(--color-accent-100);
+  --color-accent-soft: var(--color-accent-50);
   --color-accent-hover: var(--color-accent-700);
-  --color-neutral-50: #faf9f6;
-  --color-neutral-100: #f3f1ec;
-  --color-neutral-200: #e7e3da;
-  --color-neutral-300: #d2cdbf;
-  --color-neutral-400: #a9a395;
-  --color-neutral-500: #7d786c;
-  --color-neutral-600: #5d594f;
-  --color-neutral-700: #46433b;
-  --color-neutral-800: #2e2c26;
-  --color-neutral-900: #1c1a16;
-  --color-neutral-950: #0e0d0a;
-  --color-success: #5a8a5f;
-  --color-success-bg: rgba(90, 138, 95, 0.12);
-  --color-success-fg: #41673f;
-  --color-warning: #b07a2b;
-  --color-warning-bg: rgba(176, 122, 43, 0.12);
-  --color-warning-fg: #875a1a;
-  --color-error: #a94a3c;
-  --color-error-bg: rgba(169, 74, 60, 0.12);
-  --color-error-fg: #8a3a2e;
-  --color-info: #4a7a93;
-  --color-info-bg: rgba(74, 122, 147, 0.12);
-  --color-info-fg: #355d72;
-  --shadow-xs: 0 1px 2px 0 rgba(20, 18, 14, 0.04);
-  --shadow-sm: 0 1px 2px 0 rgba(20, 18, 14, 0.05), 0 1px 1px 0 rgba(20, 18, 14, 0.03);
-  --shadow-md: 0 4px 12px -2px rgba(20, 18, 14, 0.06), 0 2px 4px -1px rgba(20, 18, 14, 0.04);
-  --shadow-lg: 0 12px 32px -6px rgba(20, 18, 14, 0.10), 0 4px 12px -2px rgba(20, 18, 14, 0.06);
-  --shadow-xl: 0 24px 48px -12px rgba(20, 18, 14, 0.16), 0 8px 16px -4px rgba(20, 18, 14, 0.08);
+  --color-cta-fg: #ffffff;
+  --gradient-vermillion: linear-gradient(94deg, rgb(222, 42, 11) -33.85%, rgb(212, 64, 0) -1.54%, rgb(222, 42, 11) 73.55%);
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e7eb;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #99a1af;
+  --color-neutral-500: #8a8a8a;
+  --color-neutral-600: #676767;
+  --color-neutral-700: #4a5565;
+  --color-neutral-800: #364153;
+  --color-neutral-900: #101828;
+  --color-neutral-950: #000000;
+  --color-success: #346538;
+  --color-success-bg: #edf3ec;
+  --color-success-fg: #2a5230;
+  --color-warning: #956400;
+  --color-warning-bg: #fbf3db;
+  --color-warning-fg: #7a5200;
+  --color-error: #9f2f2d;
+  --color-error-bg: #fdebec;
+  --color-error-fg: #8a2725;
+  --color-info: #1f6c9f;
+  --color-info-bg: #e1f3fe;
+  --color-info-fg: #195883;
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.14), 0 4px 10px -2px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18), 0 8px 16px -4px rgba(0, 0, 0, 0.1);
   --background: var(--color-bg);
   --foreground: var(--color-text);
   --card: var(--color-surface);
@@ -307,93 +313,92 @@
   --destructive: var(--color-error);
   --destructive-foreground: #ffffff;
   --border: var(--color-border);
-  --input: var(--color-border);
-  --ring: var(--color-accent-500);
-  /* ---- Agenda · cor de pessoa (espelho do :root) -----------------------
-   * Espelhado aqui porque o tema escuro sobrescreve estas oito chaves, e
-   * `tests/unit/branding-tema-claro-escopavel.test.ts` exige que este bloco
-   * cubra EXATAMENTE o que o escuro cobre: uma subárvore `data-theme="light"`
-   * dentro de página escura herdaria os valores escuros, e a amostra de cor
-   * mentiria sobre a cor que a pessoa tem.
-   */
-  --agenda-pessoa-1: #ac4d40;   /* telha */
-  --agenda-pessoa-2: #bd7c20;   /* âmbar */
-  --agenda-pessoa-3: #7e6f01;   /* oliva */
-  --agenda-pessoa-4: #11a19b;   /* turquesa */
-  --agenda-pessoa-5: #0b7a9a;   /* azul */
-  --agenda-pessoa-6: #608bda;   /* índigo */
-  --agenda-pessoa-7: #7b5bad;   /* violeta */
-  --agenda-pessoa-8: #cc77b1;   /* framboesa */
+  --input: var(--color-border-strong);
+  --ring: var(--color-text);
+  --agenda-pessoa-1: #ac4d40;
+  --agenda-pessoa-2: #bd7c20;
+  --agenda-pessoa-3: #7e6f01;
+  --agenda-pessoa-4: #11a19b;
+  --agenda-pessoa-5: #0b7a9a;
+  --agenda-pessoa-6: #608bda;
+  --agenda-pessoa-7: #7b5bad;
+  --agenda-pessoa-8: #cc77b1;
 }
 
 [data-theme="dark"] {
-  /* Surfaces (dark — drawn) */
-  --color-bg: #161510;
-  --color-surface: #1d1c17;
-  --color-surface-elevated: #272620;
-  --color-overlay: rgba(0, 0, 0, 0.55);
+  /* Superfícies (dark) — chapa de carbono sob luz rasante, não inversão */
+  --color-bg: #141414;
+  --color-surface: #1c1c1c;
+  --color-surface-elevated: #242424;
+  --color-surface-sunken: #101010;
+  --color-carbon: #000000;
+  --color-ink: #ffffff;
+  --color-overlay: rgba(0, 0, 0, 0.62);
 
-  /* Text (dark) */
-  --color-text: #f5f4ef;
-  --color-text-muted: #8e8b7f;
-  --color-text-subtle: #605e54;
+  --color-text: #f5f5f5;
+  --color-text-muted: #a8a8a8;
+  --color-text-subtle: #8a8a8a;
+  --color-text-on-carbon: #f5f5f5;
+  --color-mist: #6b6b6b;
+  --color-iron: #8a8a8a;
 
-  /* Borders (dark) */
-  --color-border: #33312a;
-  --color-border-strong: #444239;
+  --color-border: #2b2b2b;
+  --color-border-strong: #3f3f3f;
 
-  /* Accent stays same hex stops; default shifts up for dark contrast */
-  --color-accent-50:  #f3f6f1;
-  --color-accent-100: #e4ebe0;
-  --color-accent-200: #c8d6c1;
-  --color-accent-300: #a4ba9a;
-  --color-accent-400: #82a077;
-  --color-accent-500: #67885d;
-  --color-accent-600: #506d48;
-  --color-accent-700: #41573b;
-  --color-accent-800: #374731;
-  --color-accent-900: #2f3c2b;
-  --color-accent-950: #171f15;
+  /* A rampa é a MESMA; o accent sobe para a parada 400 (#f2704e) porque #e42b0c
+     sobre #141414 fecha o contorno e some. Texto sobre ela é tinta escura:
+     #141414 sobre #f2704e dá 6.5:1; branco daria 3.4:1 e reprovaria. */
+  --color-accent-50: #fef4f1;
+  --color-accent-100: #fde3db;
+  --color-accent-200: #fbc4b4;
+  --color-accent-300: #f89d84;
+  --color-accent-400: #f2704e;
+  --color-accent-500: #ea4b26;
+  --color-accent-600: #e42b0c;
+  --color-accent-700: #bd2109;
+  --color-accent-800: #951a07;
+  --color-accent-900: #6e1305;
+  --color-accent-950: #3d0a03;
   --color-accent: var(--color-accent-400);
-  --color-accent-fg: #161510;
-  --color-accent-soft: rgba(130, 160, 119, 0.16);
+  --color-accent-fg: #141414;
+  --color-accent-soft: rgba(242, 112, 78, 0.14);
   --color-accent-hover: var(--color-accent-300);
+  /* CTA no escuro: vermillion sobe de tom, texto vira tinta. Medido com
+     #141414 por cima: 5.57:1 no pior ponto. */
+  --color-cta-fg: #141414;
+  --gradient-vermillion: linear-gradient(94deg, rgb(255, 77, 46) -33.85%, rgb(255, 138, 74) -1.54%, rgb(255, 77, 46) 73.55%);
 
-  /* Neutrals — greige (11 stops, dark) */
-  --color-neutral-50:  #f5f4ef;
-  --color-neutral-100: #e6e4dc;
-  --color-neutral-200: #bbb8ac;
-  --color-neutral-300: #8e8b7f;
-  --color-neutral-400: #605e54;
-  --color-neutral-500: #444239;
-  --color-neutral-600: #33312a;
-  --color-neutral-700: #272620;
-  --color-neutral-800: #1d1c17;
-  --color-neutral-900: #161510;
-  --color-neutral-950: #0c0b08;
+  --color-neutral-50: #f5f5f5;
+  --color-neutral-100: #e5e5e5;
+  --color-neutral-200: #c4c4c4;
+  --color-neutral-300: #a8a8a8;
+  --color-neutral-400: #8a8a8a;
+  --color-neutral-500: #6b6b6b;
+  --color-neutral-600: #4f4f4f;
+  --color-neutral-700: #3f3f3f;
+  --color-neutral-800: #2b2b2b;
+  --color-neutral-900: #1c1c1c;
+  --color-neutral-950: #0a0a0a;
 
-  /* States (dark) */
-  --color-success: #82a077;
-  --color-success-bg: rgba(130, 160, 119, 0.18);
-  --color-success-fg: #a4ba9a;
-  --color-warning: #d09455;
-  --color-warning-bg: rgba(208, 148, 85, 0.18);
-  --color-warning-fg: #e0ad77;
-  --color-error: #c87263;
-  --color-error-bg: rgba(200, 114, 99, 0.18);
-  --color-error-fg: #d99182;
-  --color-info: #7da9bf;
-  --color-info-bg: rgba(125, 169, 191, 0.18);
-  --color-info-fg: #9bbfd2;
+  --color-success: #86c08c;
+  --color-success-bg: rgba(134, 192, 140, 0.14);
+  --color-success-fg: #a4d3a9;
+  --color-warning: #d8a648;
+  --color-warning-bg: rgba(216, 166, 72, 0.14);
+  --color-warning-fg: #e6c078;
+  --color-error: #e07b78;
+  --color-error-bg: rgba(224, 123, 120, 0.14);
+  --color-error-fg: #ec9c99;
+  --color-info: #7fb4d8;
+  --color-info-bg: rgba(127, 180, 216, 0.14);
+  --color-info-fg: #a3c9e4;
 
-  /* Shadows — heavier in dark */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.30);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.40), 0 1px 1px 0 rgba(0, 0, 0, 0.20);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.45), 0 2px 4px -1px rgba(0, 0, 0, 0.30);
-  --shadow-lg: 0 12px 32px -6px rgba(0, 0, 0, 0.55), 0 4px 12px -2px rgba(0, 0, 0, 0.40);
-  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.65), 0 8px 16px -4px rgba(0, 0, 0, 0.50);
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.5), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 28px -8px rgba(0, 0, 0, 0.62), 0 4px 10px -2px rgba(0, 0, 0, 0.45);
+  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 8px 16px -4px rgba(0, 0, 0, 0.5);
 
-  /* shadcn-compat aliases */
   --background: var(--color-bg);
   --foreground: var(--color-text);
   --card: var(--color-surface);
@@ -408,14 +413,12 @@
   --muted-foreground: var(--color-text-muted);
   --accent-foreground: var(--color-accent-fg);
   --destructive: var(--color-error);
-  --destructive-foreground: #ffffff;
+  --destructive-foreground: #141414;
   --border: var(--color-border);
-  --input: var(--color-border);
-  --ring: var(--color-accent-400);
-  /* ---- Agenda · cor de pessoa (tema escuro) ----------------------------
-   * Mais claras e menos saturadas que as do claro: sobre `#161510` a versão
-   * escura de cada matiz sumiria. Mesma ordem, mesmos nomes.
-   */
+  --input: var(--color-border-strong);
+  --ring: var(--color-text);
+
+  /* Agenda · cor de pessoa (tema escuro) — mais claras, mesma ordem */
   --agenda-pessoa-1: #f89080;
   --agenda-pessoa-2: #ca8931;
   --agenda-pessoa-3: #d1bf55;
@@ -453,17 +456,29 @@
    embrulhar o `:root` num `@layer`, o teste reprova e a explicação está aqui.
    ───────────────────────────────────────────────────────────────────────── */
 @theme inline {
-  /* Foundation */
+  /* Fundação */
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
   --color-surface-elevated: var(--color-surface-elevated);
+  --color-surface-sunken: var(--color-surface-sunken);
   --color-overlay: var(--color-overlay);
+  --color-carbon: var(--color-carbon);
+  --color-ink: var(--color-ink);
 
   --color-text: var(--color-text);
   --color-text-muted: var(--color-text-muted);
   --color-text-subtle: var(--color-text-subtle);
+  --color-text-on-carbon: var(--color-text-on-carbon);
+  --color-mist: var(--color-mist);
+  --color-iron: var(--color-iron);
 
-  /* Accent — Sage */
+  /* Apelidos da referência Orderful */
+  --color-vellum: var(--color-bg);
+  --color-paper: var(--color-surface);
+  --color-frost: var(--color-border);
+  --color-cloud: var(--color-border-strong);
+
+  /* Accent — Vermillion */
   --color-accent: var(--color-accent);
   --color-accent-foreground: var(--color-accent-fg);
   --color-accent-soft: var(--color-accent-soft);
@@ -479,8 +494,9 @@
   --color-accent-800: var(--color-accent-800);
   --color-accent-900: var(--color-accent-900);
   --color-accent-950: var(--color-accent-950);
+  --color-cta-foreground: var(--color-cta-fg);
 
-  /* Neutrals — greige */
+  /* Neutros */
   --color-neutral-50: var(--color-neutral-50);
   --color-neutral-100: var(--color-neutral-100);
   --color-neutral-200: var(--color-neutral-200);
@@ -493,7 +509,7 @@
   --color-neutral-900: var(--color-neutral-900);
   --color-neutral-950: var(--color-neutral-950);
 
-  /* States */
+  /* Estados */
   --color-success: var(--color-success);
   --color-success-bg: var(--color-success-bg);
   --color-success-fg: var(--color-success-fg);
@@ -507,15 +523,12 @@
   --color-info-bg: var(--color-info-bg);
   --color-info-fg: var(--color-info-fg);
 
-  /* Aliases shadcn (consumers ainda não migrados). Espelham 1:1 o que o
-     `tailwind.config.ts` mapeava — inclusive `ring`, que apontava para a
-     parada 500 fixa e NÃO para `--ring` (que muda no escuro). Mantido igual de
-     propósito: trocar aqui mudaria o anel de foco de toda a aplicação, e isso
-     é decisão de design, não de migração. */
+  /* Aliases shadcn (consumers ainda não migrados). `input` e `ring` seguem o
+     Orderful: campo com borda Cloud, anel de foco na cor do texto. */
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
-  --color-input: var(--color-border);
-  --color-ring: var(--color-accent-500);
+  --color-input: var(--color-border-strong);
+  --color-ring: var(--color-text);
   --color-background: var(--color-bg);
   --color-foreground: var(--color-text);
   --color-primary: var(--color-accent);
@@ -523,7 +536,7 @@
   --color-secondary: var(--color-surface-elevated);
   --color-secondary-foreground: var(--color-text);
   --color-destructive: var(--color-error);
-  --color-destructive-foreground: #ffffff;
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-muted: var(--color-surface-elevated);
   --color-muted-foreground: var(--color-text-muted);
   --color-popover: var(--color-surface);
@@ -531,20 +544,19 @@
   --color-card: var(--color-surface);
   --color-card-foreground: var(--color-text);
 
-  /* Tipografia */
-  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, -apple-system,
+  /* Sunset Flux → `bg-vermillion`. Consumidor legítimo: só o variant `cta`. */
+  --background-image-vermillion: var(--gradient-vermillion);
+
+  /* Tipografia — Archivo é o grotesco de trabalho do deck Orderful */
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco,
     Consolas, monospace;
+  --tracking-display: var(--tracking-display);
+  --tracking-title: var(--tracking-title);
+  --tracking-eyebrow: var(--tracking-eyebrow);
 
-  /* Espaçamento. Os valores são px LITERAIS (`--space-6` = 24px), não rem — e
-     essa diferença é carregada por quem consome: ver o cálculo de altura em
-     `components/inbox/InboxLayout.tsx`, que soma `var(--space-6)` a um `3.5rem`
-     justamente porque as duas parcelas NÃO estão na mesma unidade.
-
-     As paradas fora desta lista (`p-7`, `gap-1.5`, `mt-14`…) continuam
-     existindo: o v4 as calcula pelo multiplicador `--spacing` (0.25rem), do
-     mesmo jeito que a escala default do v3 as fornecia. */
+  /* Espaçamento — px literais (ver nota em components/inbox/InboxLayout.tsx) */
   --spacing-0: var(--space-0);
   --spacing-1: var(--space-1);
   --spacing-2: var(--space-2);
@@ -568,14 +580,15 @@
   --radius-xl: var(--radius-xl);
   --radius-full: var(--radius-full);
 
-  /* Sombra */
+  /* Sombra — `subtle` é o apelido de repouso do deck */
   --shadow-xs: var(--shadow-xs);
+  --shadow-subtle: var(--shadow-sm);
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
 
-  /* Motion */
+  /* Movimento */
   --ease-out: var(--ease-out);
   --ease-in-out: var(--ease-in-out);
   --ease-spring: var(--ease-spring);
@@ -671,16 +684,16 @@
   }
 
   body {
-    /* Mesma trava do `html` logo acima, duplicada aqui de propósito: alguns
-       motores móveis (Safari/iOS em particular) ignoram `overflow-x` só no
-       `html` em certas versões — as duas juntas é o par que realmente
-       bloqueia em todo navegador testado pela comunidade. */
+    /* Mesma trava do `html` logo acima, duplicada de propósito: alguns motores
+       móveis ignoram `overflow-x` só no `html`. */
     overflow-x: hidden;
     background-color: var(--color-bg);
     color: var(--color-text);
-    font-family: var(--font-atkinson), ui-sans-serif, system-ui, -apple-system,
+    font-family: var(--font-archivo), ui-sans-serif, system-ui, -apple-system,
       "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    /* "case" alinha pontuação à caixa-alta — é o que faz um eyebrow em 12px
+       parecer composto e não esticado. */
+    font-feature-settings: "case" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -692,43 +705,25 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Seleção acromática: a vermillion é ação, não estado de seleção. */
   ::selection {
-    background-color: var(--color-accent-200);
-    color: var(--color-accent-950);
-  }
-  [data-theme="dark"] ::selection {
-    background-color: var(--color-accent-700);
-    color: var(--color-accent-50);
+    background-color: var(--color-neutral-300);
+    color: var(--color-text);
   }
 
-  /* Focus ring: Sage 500/400, 2px with offset */
+  /* Foco: a COR da referência Orderful (tinta) com a ESPESSURA da
+     acessibilidade (2px, DESIGN_SYSTEM §1.4). Vermillion aqui está fora de
+     questão — foco não é ação. O token vira tinta clara no escuro sozinho. */
   :focus-visible {
-    outline: 2px solid var(--color-accent-500);
+    outline: 2px solid var(--color-text);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
-  [data-theme="dark"] :focus-visible {
-    outline-color: var(--color-accent-400);
-  }
 
-  /* Modo de alto contraste do sistema (Windows High Contrast / forced-colors).
-     O problema: arquivos que matam o `outline` e desenham o foco com `ring-*`
-     — que é `box-shadow`, e o forced-colors APAGA box-shadow. Neles o
-     indicador de foco some por completo naquele modo: quem navega por teclado
-     perde a posição do cursor. É WCAG 2.4.7 nível A, não preferência.
-
-     Quantos são hoje (comando, e não número — número envelhece; a migração
-     para o Tailwind 4 já invalidou o que estava escrito aqui, porque
-     `outline-none` virou `outline-hidden` e o grep antigo passou a devolver
-     zero):
-
-       grep -rlE 'outline-hidden|outline:\s*none|outline-\[?transparent' \
-         app components lib --include='*.tsx' --include='*.ts' | wc -l
-       # …| xargs grep -lE 'ring-[a-z0-9]' | wc -l   ← os que dependem de ring
-
-     `Highlight` é cor de sistema (a paleta do usuário), a única que o modo não
-     substitui. `!important` porque o que precisa ser vencido é justamente o
-     `outline: none`/`outline: transparent` desses 14 arquivos. */
+  /* Modo de alto contraste do sistema (forced-colors): `Highlight` é cor de
+     sistema, a única que o modo não substitui. `!important` porque o que
+     precisa ser vencido é o `outline: none` dos arquivos que desenham foco
+     com `ring-*` (box-shadow, que o modo apaga). WCAG 2.4.7 nível A. */
   @media (forced-colors: active) {
     :focus-visible {
       outline: 2px solid Highlight !important;
@@ -736,43 +731,61 @@
     }
   }
 
-  /* Scrollbar — subtle greige */
+  /* Scrollbar — fina, Cloud; Iron no hover. Tokens já trocam no escuro. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-neutral-300) transparent;
-  }
-  [data-theme="dark"] * {
-    scrollbar-color: var(--color-neutral-600) transparent;
+    scrollbar-color: var(--color-border-strong) transparent;
   }
   ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background-color: var(--color-neutral-300);
-    border-radius: var(--radius-full);
+    background-color: var(--color-border-strong);
+    border-radius: var(--radius-sm);
     border: 2px solid transparent;
     background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-neutral-400);
-    background-clip: padding-box;
-    border: 2px solid transparent;
-  }
-  [data-theme="dark"] ::-webkit-scrollbar-thumb {
-    background-color: var(--color-neutral-600);
-    background-clip: padding-box;
-    border: 2px solid transparent;
-  }
-  [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-neutral-500);
+    background-color: var(--color-iron);
     background-clip: padding-box;
     border: 2px solid transparent;
   }
 }
+
+@layer components {
+  /* Eyebrow — o tipógrafo industrial do sistema: 12px, caixa-alta, tracking
+     expandido. A ÚNICA situação em que caixa-alta é permitida em bloco
+     (DESIGN_SYSTEM §2.1). */
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-eyebrow);
+    color: var(--color-text-subtle);
+  }
+
+  /* Numérico — valor, contagem, telefone, horário, identificador. Números que
+     se alinham em coluna são requisito de leitura num CRM, não estética. */
+  .numeric {
+    font-family: var(--font-mono), ui-monospace, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--tracking-title);
+  }
+}
+
+/* `z-*` nomeado: o v4 não tem espaço de tema para z-index, então os apelidos
+   viram utilitário explícito, no modelo de `duration-*` acima. */
+@utility z-base { z-index: var(--z-base); }
+@utility z-raised { z-index: var(--z-raised); }
+@utility z-dropdown { z-index: var(--z-dropdown); }
+@utility z-sticky { z-index: var(--z-sticky); }
+@utility z-modal { z-index: var(--z-modal); }
+@utility z-toast { z-index: var(--z-toast); }
 
 /* ---- Pulso de chegada no card do Kanban (CRM Vivo, Wave 3) --------------
    Vivo é o que RESPONDE, não o que se agita: um pulso, uma vez, e cessa.
