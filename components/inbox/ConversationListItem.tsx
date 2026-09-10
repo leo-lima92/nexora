@@ -69,13 +69,27 @@ interface Props {
  * As chaves são as de `Comando["quem"]`, ao lado de `ROTULO_DO_COMANDO`, pela
  * mesma razão que ele mora ali: a cor e a palavra dizem a mesma coisa e não
  * podem ser mantidas em arquivos diferentes.
+ *
+ * Os TONS são do deck, não do Tailwind cru (`bg-blue-500`, `bg-purple-500`,
+ * `bg-amber-500` saíram): num deck acromático eles gritavam mais alto que a
+ * única cor que deveria gritar. A escala é semântica — quanto mais a conversa
+ * precisa de gente, mais forte a marca:
+ *
+ *   aguardando   vermillion — o ÚNICO estado que pede ação de alguém agora
+ *   ninguem      tinta      — ninguém no comando, mas nada está esperando
+ *   humano       ferro      — um atendente já está nela
+ *   automatico   névoa forte— o agente conduz, ninguém precisa entrar
+ *   encerrada    névoa      — histórico
+ *
+ * A cor nunca anda sozinha: o rótulo do comando vai escrito ao lado, no
+ * cabeçalho da conversa. Ver DESIGN_SYSTEM §4.
  */
 const COR_DO_COMANDO: Record<string, string> = {
-  humano: "bg-blue-500",
-  automatico: "bg-purple-500",
-  aguardando: "bg-amber-500",
-  ninguem: "bg-muted-foreground/60",
-  encerrada: "bg-muted-foreground/30",
+  humano: "bg-iron",
+  automatico: "bg-border-strong",
+  aguardando: "bg-accent",
+  ninguem: "bg-text",
+  encerrada: "bg-border",
 };
 
 function initials(name: string | null | undefined, fallback: string): string {
@@ -174,9 +188,9 @@ export function ConversationListItem({
       data-conversation-id={conversation.id}
       onClick={() => onSelect(conversation.id)}
       className={cn(
-        "group relative flex w-full items-start gap-3 border-b border-border/70 px-3 py-2.5 text-left transition-colors hover:bg-surface-elevated",
+        "group relative flex w-full items-start gap-3 border-b border-border border-l-2 border-l-transparent px-3.5 py-3 text-left transition-colors duration-fast ease-out hover:bg-surface-elevated",
         "focus-visible:outline-hidden focus-visible:bg-surface-elevated",
-        isSelected && "bg-accent-50 hover:bg-accent-50",
+        isSelected && "border-l-text bg-surface-elevated",
       )}
       aria-current={isSelected ? "true" : undefined}
     >
@@ -202,7 +216,7 @@ export function ConversationListItem({
         </Avatar>
         <span
           className={cn(
-            "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background",
+            "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-surface",
             dot,
           )}
           aria-hidden
@@ -213,12 +227,12 @@ export function ConversationListItem({
         {queuePosition !== undefined && (
           <div className="mb-1 flex items-center gap-1.5">
             <span
-              className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-soft px-1 text-[10px] font-medium tabular-nums text-accent"
+              className="inline-flex h-4 min-w-4 items-center justify-center rounded-md bg-accent px-1 font-mono text-[10px] font-medium tabular-nums text-accent-foreground"
               aria-label={`${t("Posição")} ${queuePosition} ${t("na fila")}`}
             >
               {queuePosition}º
             </span>
-            <span className="text-[11px] text-text-muted">
+            <span className="text-[11px] text-text-subtle">
               {waitingLabel(conversation, t, localeDaData)}
             </span>
           </div>
@@ -226,14 +240,14 @@ export function ConversationListItem({
         <div className="flex items-baseline justify-between gap-2">
           <span
             className={cn(
-              "truncate text-sm",
+              "truncate text-sm tracking-title",
               unread > 0 ? "font-semibold text-text" : "font-medium text-text",
               c?.is_anonymized && "font-normal italic text-text-muted",
             )}
           >
             {displayName}
           </span>
-          <span className="shrink-0 text-[11px] tabular-nums text-text-subtle">{time}</span>
+          <span className="shrink-0 font-mono text-[11px] tabular-nums text-text-subtle">{time}</span>
         </div>
 
         <div className="mt-0.5 flex items-center justify-between gap-2">
@@ -249,7 +263,7 @@ export function ConversationListItem({
             {truncated}
           </p>
           {unread > 0 && (
-            <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-semibold tabular-nums text-accent-foreground">
+            <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-md bg-text px-1.5 font-mono text-[10px] font-semibold tabular-nums text-surface">
               {unread}
             </span>
           )}

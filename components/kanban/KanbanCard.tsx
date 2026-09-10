@@ -142,10 +142,14 @@ export function KanbanCard({
           title={card.tags.length > 0 ? `Tags: ${card.tags.join(", ")}` : undefined}
           className={cn(
             "group relative overflow-hidden rounded-md border border-border bg-surface",
-            "py-2.5 pl-3 pr-3 shadow-xs transition-colors",
+            "px-3.5 py-3 shadow-subtle transition-colors duration-fast ease-out",
             "hover:border-border-strong",
-            snapshot.isDragging && "rotate-1 shadow-md ring-1 ring-accent/40",
-            isSelected && "ring-2 ring-accent",
+            // Arrasto e seleção são ACROMÁTICOS. O anel vermillion de antes
+            // colocava a cor de conversão em dois estados que não convertem —
+            // e, num board cheio, meia dúzia de cards selecionados apagavam o
+            // único botão que importa. Tinta cheia diz o mesmo sem gastar cor.
+            snapshot.isDragging && "rotate-1 shadow-md",
+            isSelected && "ring-1 ring-text",
           )}
         >
           {/* key = contador: cada evento remoto monta um overlay NOVO, e é isso
@@ -221,7 +225,7 @@ export function KanbanCard({
                   acessibilidade; deixar só onKeyDown daria uma ação que existe
                   e NÃO É DESCOBERTA por leitor de tela. O título como button
                   atende mouse, teclado e leitor sem desfazer a decisão antiga. */}
-              <h3 className="line-clamp-2 h-10 text-sm font-medium leading-5 text-text">
+              <h3 className="line-clamp-2 h-10 text-sm font-medium leading-5 tracking-title text-text">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -244,15 +248,17 @@ export function KanbanCard({
           {/* ② valor — altura reservada mesmo sem valor, senão o card encolhe. */}
           <p
             className={cn(
-              "mt-1 h-5 text-xs font-medium leading-5 tabular-nums",
-              value ? "text-text" : "text-text-muted",
+              // Valor em MONO tabular: é o que faz a coluna de dinheiro
+              // alinhar de card em card, que é requisito de leitura num funil.
+              "mt-1.5 h-5 font-mono text-sm font-medium leading-5 tracking-title tabular-nums",
+              value ? "text-text" : "text-text-subtle",
             )}
           >
             {value ?? "—"}
           </p>
 
           {/* ③ a linha do agente — um slot, três estados, nunca três blocos. */}
-          <div className="mt-1.5 flex h-6 items-center gap-2 text-xs">
+          <div className="mt-2 flex h-6 items-center gap-2 text-xs">
             {state.slot.type === "awaiting" && (
               // A proposta do agente é a ÚNICA linha do card com ação: é o
               // ponto onde a decisão do humano entra. Sem os botões aqui, o
@@ -296,13 +302,13 @@ export function KanbanCard({
           <ConversaSlot conversa={lead.conversa} />
 
           {/* ④ dono · ⑤ tempo no estágio */}
-          <div className="mt-1 flex h-6 items-center justify-between gap-2">
+          <div className="mt-1.5 flex h-6 items-center justify-between gap-2">
             <OwnerBadge
               ownerKind={card.owner.kind}
               ownerName={card.owner.name}
               agentVersion={card.owner.agentVersion}
             />
-            <span className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-text-muted">
+            <span className="shrink-0 whitespace-nowrap font-mono text-[11px] tabular-nums text-text-subtle">
               {state.showStageAge && age
                 ? `${age} ${t("em")} ${card.stageName}`
                 : `${t("em")} ${card.stageName}`}

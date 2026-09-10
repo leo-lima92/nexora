@@ -12,7 +12,7 @@ describe("resolveBranding", () => {
     expect(resolveBranding(undefined, undefined)).toEqual({
       name: DEFAULT_APP_NAME,
       logoUrl: null,
-      initial: "D",
+      initial: "N",
     });
   });
 
@@ -131,7 +131,8 @@ describe("nome do arquivo de códigos de recuperação", () => {
   it("deriva o prefixo da marca, sem acento e sem espaço", () => {
     expect(prefixoDoArquivo("Vendas Turbo")).toBe("vendas-turbo");
     expect(prefixoDoArquivo("Ótima Gestão")).toBe("otima-gestao");
-    expect(prefixoDoArquivo(DEFAULT_APP_NAME)).toBe("deskcommcrm");
+    // Fork Nexora: o padrão do produto é "Nexora" (lib/branding.ts).
+    expect(prefixoDoArquivo(DEFAULT_APP_NAME)).toBe("nexora");
   });
 
   it("não devolve hífen pendurado nem repetido", () => {
@@ -317,12 +318,11 @@ const MARCA_CONGELADA: Record<string, EntradaDeMarca> = {
   },
 
   // ─── PADRAO — a marca padrão precisa existir em algum lugar. ───
-  "lib/branding.ts": {
-    categoria: "PADRAO",
-    motivo:
-      "é a DEFINIÇÃO de DEFAULT_APP_NAME — o valor que aparece quando o operador não configurou marca nenhuma. Se esta linha sumir, some o padrão",
-    marcas: ["deskcommcrm"],
-  },
+  // No fork Nexora ela é `DEFAULT_APP_NAME = "Nexora"` em lib/branding.ts. A
+  // varredura desta catraca procura `/deskcomm/i` (a marca do UPSTREAM, que só
+  // pode sobrar em fio de protocolo), então o arquivo saiu desta lista: ele não
+  // carrega mais a palavra. Quem prende o valor do padrão é
+  // `tests/unit/marca-do-produto-nao-se-edita-no-codigo.test.ts`.
 };
 
 /**

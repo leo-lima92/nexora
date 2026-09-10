@@ -123,6 +123,8 @@ it("PDF efetivamente entregue contém registros, datas, estados e controlador se
     "MARCA_DO_REVENDEDOR_NAO_USAR",
     "Link enviado",
     "DeskcommCRM",
+    // O padrão do fork: o PDF de LGPD nomeia o CONTROLADOR, nunca a marca do produto.
+    "Nexora",
   ])
     expect(pdf.text).not.toContain(value);
   // Artefatos opcionais do runner; o teste funciona em qualquer checkout/CI.

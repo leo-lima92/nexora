@@ -14,7 +14,10 @@ name: Publicar imagem Docker (GHCR)
 on:
   push:
     tags: ["v*"]
-    branches: ["main"]
+    # `master` é o ramo padrão deste fork (Nexora). O upstream DeskcommCRM usa
+    # `main`; mantê-lo aqui publicaria imagens de um ramo que este repositório
+    # não tem. A trava de procedência e o canal `latest` seguem o mesmo nome.
+    branches: ["master"]
   # NÃO acrescente `release: types: [published]` aqui. Ele já esteve, e o efeito
   # foi medido na v1.3.0: `gh release create` empurra a tag E publica a release,
   # então o MESMO commit foi construído DUAS vezes, com 5 minutos de diferença.
@@ -69,7 +72,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: A tag está contida na main?
+      - name: A tag está contida na master?
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -81,15 +84,15 @@ jobs:
             echo "não é push de tag (${GITHUB_REF_TYPE}) — nada a conferir"
             exit 0
           fi
-          estado=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...${GITHUB_SHA}" --jq .status)
-          echo "compare main...${GITHUB_SHA} → ${estado}"
-          # `identical` = a tag é o topo da main; `behind` = está atrás dela, ou
-          # seja, contida. `ahead` e `diverged` são commit que a main não tem.
+          estado=$(gh api "repos/${GITHUB_REPOSITORY}/compare/master...${GITHUB_SHA}" --jq .status)
+          echo "compare master...${GITHUB_SHA} → ${estado}"
+          # `identical` = a tag é o topo da master; `behind` = está atrás dela, ou
+          # seja, contida. `ahead` e `diverged` são commit que a master não tem.
           case "$estado" in
-            identical|behind) echo "ok: o commit da tag está contido na main" ;;
+            identical|behind) echo "ok: o commit da tag está contido na master" ;;
             *)
-              echo "::error::A tag ${GITHUB_REF_NAME} aponta para um commit que a main NÃO contém (${estado})."
-              echo "::error::Publicar isso entregaria ao parque instalado código que nunca passou pelo CI da main."
+              echo "::error::A tag ${GITHUB_REF_NAME} aponta para um commit que a master NÃO contém (${estado})."
+              echo "::error::Publicar isso entregaria ao parque instalado código que nunca passou pelo CI da master."
               exit 1
               ;;
           esac

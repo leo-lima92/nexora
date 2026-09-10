@@ -130,6 +130,20 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
     [qc],
   );
 
+  /**
+   * Canais cujo health check NÃO conseguiu falar com o transporte, e por quê.
+   *
+   * Sem isto, a Central lia só o status do BANCO e o pintava de verde: com o
+   * transporte inalcançável a tela dizia "Conectado · Verificado <agora>" para
+   * um canal que ninguém tinha verificado — medido nesta sessão. O status velho
+   * continua sendo a melhor informação disponível; o que não pode é ele se
+   * passar por confirmação de agora.
+   */
+  const [semTransporte, setSemTransporte] = useState<{ ids: string[]; motivo: string | null }>({
+    ids: [],
+    motivo: null,
+  });
+
   // Health check ao vivo de todos os canais — consulta o WAHA e grava
   // last_health_check_at. É a verificação de saúde de verdade (o status do DB
   // pode estar velho se o WAHA caiu sem emitir evento).
@@ -138,9 +152,46 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
       if (!wahaConfigured || list.length === 0) return;
       setChecking(true);
       try {
-        await Promise.allSettled(
-          list.map((c) => apiClient.get(`/api/v1/channel-sessions/${c.id}`)),
+        // `async` no callback, e não `.then()` encadeado: se a chamada lançar
+        // (ou não devolver promessa), o `.then()` estoura DENTRO do `map` —
+        // síncrono, antes de o `allSettled` existir — e derruba o health check
+        // inteiro em vez de virar uma promessa rejeitada que o `allSettled`
+        // absorve. Um canal que falha não pode levar os outros junto.
+        const respostas = await Promise.allSettled(
+          list.map(async (c) => {
+            const r = await apiClient.get<{
+              data?: { transport_reachable?: boolean; transport_error?: string | null };
+            }>(`/api/v1/channel-sessions/${c.id}`);
+            return { id: c.id, corpo: r?.data };
+          }),
         );
+
+        const fora: string[] = [];
+        let motivo: string | null = null;
+        respostas.forEach((r, i) => {
+          if (r.status === "rejected") {
+            // A rota do canal FALHA FECHADO quando não alcança o transporte
+            // (502 `connection_status_failed`): não carimba `last_health_check_at`
+            // e não devolve status. Esse canal não foi verificado — e a tela
+            // tem de dizer isso em vez de manter o selo verde do banco. Outros
+            // erros (sessão expirada, canal removido) não são falta de alcance
+            // e seguem tratados por quem os produziu.
+            const erro = r.reason;
+            if (erro instanceof ApiError && (erro.code === "connection_status_failed" || erro.status >= 502)) {
+              fora.push(list[i]!.id);
+              motivo ??= erro.message && erro.message !== erro.code ? erro.message : null;
+            }
+            return;
+          }
+          // `transport_reachable === false` é explícito de propósito: a rota do
+          // canal oficial não devolve o campo, e `!undefined` marcaria como fora
+          // do ar um canal que nem passa pelo transporte.
+          if (r.value.corpo?.transport_reachable === false) {
+            fora.push(r.value.id);
+            motivo ??= r.value.corpo.transport_error ?? null;
+          }
+        });
+        setSemTransporte({ ids: fora, motivo });
         invalidate();
       } finally {
         setChecking(false);
@@ -295,6 +346,41 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
         </div>
       )}
 
+      {/* O transporte não respondeu ao health check. A lista abaixo continua
+          válida como ÚLTIMO ESTADO CONHECIDO — o que ela não é, agora, é uma
+          leitura ao vivo. Painel fixo em vez de toast: toast some sozinho, e
+          quem chegar na tela cinco segundos depois veria selo verde sem nenhum
+          aviso de que ele é memória. */}
+      {semTransporte.ids.length > 0 && (
+        <Card
+          // O painel nasce DEPOIS da tela, quando o health check volta. Sem
+          // `role="status"` ele é invisível para leitor de tela: quem não vê a
+          // cor amarela aparecer continua com a impressão de que tudo está no ar.
+          role="status"
+          className="flex items-start gap-3 border-warning bg-warning-bg p-4"
+        >
+          <Warning size={20} weight="fill" className="mt-0.5 shrink-0 text-warning-fg" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-warning-fg">
+              {t("Serviço não conectado — os status abaixo são o último estado conhecido")}
+            </p>
+            {/* Sem modificador de opacidade no texto: o aviso a 80% de alfa sobre
+                `bg-warning-bg` mede 4.02:1 e REPROVA em AA (medido). A hierarquia
+                aqui vem do corpo e do peso, que não custam contraste. */}
+            <p className="mt-1 text-xs text-warning-fg">
+              {semTransporte.motivo ??
+                t("Não foi possível falar com o serviço de WhatsApp para confirmar a saúde dos canais agora.")}
+            </p>
+            <p className="mt-1 text-xs text-warning-fg">
+              {semTransporte.ids.length === 1
+                ? t("1 canal não pôde ser verificado.")
+                : `${semTransporte.ids.length} ${t("canais não puderam ser verificados.")}`}{" "}
+              {t("Mensagens podem não sair enquanto isso durar.")}
+            </p>
+          </div>
+        </Card>
+      )}
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">{t("Carregando conexões…")}</p>
       ) : isError ? (
@@ -347,13 +433,40 @@ export function ConnectionsClient({ wahaConfigured }: { wahaConfigured: boolean 
                       </p>
                     )}
                   </div>
-                  <Badge variant={info.variant}>{info.label}</Badge>
+                  {/* Selo VERDE é o sinal mais forte do card — mais forte que
+                      qualquer frase ao lado. Mantê-lo verde num canal que não
+                      pôde ser verificado é a definição de dado velho com cara de
+                      saudável: o olho lê o selo e para de ler. Sem confirmação,
+                      o rótulo continua (é a melhor informação que temos) mas
+                      perde a cor, que é a parte que AFIRMA. */}
+                  <Badge variant={semTransporte.ids.includes(c.id) ? "neutral" : info.variant}>
+                    {info.label}
+                  </Badge>
                 </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {c.last_health_check_at
-                    ? `${t("Verificado")} ${new Date(c.last_health_check_at).toLocaleString(tagDoIdioma)}`
-                    : t("Ainda não verificado")}
-                </p>
+                {/* "Verificado <hora>" é uma AFIRMAÇÃO de que alguém confirmou
+                    este canal naquele instante. Quando o transporte não
+                    responde, o selo ao lado passa a ser memória, não medição —
+                    e a linha tem que dizer isso, senão a tela fabrica saúde. */}
+                {semTransporte.ids.includes(c.id) ? (
+                  <p className="flex items-center gap-1.5 text-[11px] text-warning-fg">
+                    <Warning size={12} weight="fill" aria-hidden />
+                    {/* Não repete "serviço não conectado": o painel logo acima
+                        já disse. Aqui o que falta é o dado que só este card
+                        tem — desde quando. */}
+                    <span>
+                      {t("Não verificado agora")}
+                      {c.last_health_check_at
+                        ? ` — ${t("último contato")} ${new Date(c.last_health_check_at).toLocaleString(tagDoIdioma)}`
+                        : ""}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    {c.last_health_check_at
+                      ? `${t("Verificado")} ${new Date(c.last_health_check_at).toLocaleString(tagDoIdioma)}`
+                      : t("Ainda não verificado")}
+                  </p>
+                )}
                 <ChannelAiAccess channelId={c.id} />
                 <p className="text-xs text-muted-foreground">{t(!policy ? "Consulte os responsáveis em Atendimento." : policy.mode === "legacy_unconfigured" ? "Usa todos os atendentes elegíveis da organização." : policy.mode === "restricted_empty" ? "Ninguém configurado — as conversas ficarão na fila." : "Somente as pessoas selecionadas recebem este número.")}</p>
                 <div className="mt-auto flex flex-wrap gap-2">

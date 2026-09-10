@@ -23205,6 +23205,386 @@ grant execute on function public.fn_reserve_channel_connection(uuid,uuid,text,te
 
 notify pgrst,'reload schema';
 
+-- ---- ponte de dados AIOS: companies, deals, linkedin_threads (migration 0232) ----
+--
+-- Fusão do Módulo de Tráfego AIOS (backend Hono, `src/`) com o chassi. Contrato
+-- de colunas vem de `src/types/database.ts`; FKs re-apontadas para o que o chassi
+-- realmente tem (owner→auth.users, pipeline→crm_pipelines, stage→crm_stages).
+-- Coluna de tenant é `org_id` (contrato AIOS) — a RLS usa o MESMO helper
+-- `fn_user_org_ids()` do chassi. `revoke from anon` porque tabela nova nasce
+-- concedida pelo ALTER DEFAULT PRIVILEGES (lição da 0143).
+
+create table if not exists public.companies (
+  id                      uuid default gen_random_uuid() not null,
+  org_id                  uuid not null,
+  owner_id                uuid,
+  name                    text not null,
+  domain                  text,
+  website                 text,
+  city                    text,
+  country                 text,
+  industry                text,
+  size_range              text,
+  annual_revenue          numeric,
+  description             text,
+  logo_url                text,
+  cnpj                    text,
+  cnae_code               text,
+  cnae_description        text,
+  google_place_id         text,
+  apify_run_id            text,
+  linkedin_url            text,
+  linkedin_company_id     text,
+  linkedin_employee_count integer,
+  linkedin_followers      integer,
+  linkedin_scraped_at     timestamptz,
+  meta_campaign_id        text,
+  meta_adset_id           text,
+  meta_ad_id              text,
+  traffic_source          text,
+  lead_origin             text,
+  source                  text,
+  status                  text,
+  deal_value              numeric,
+  tags                    text[] default '{}'::text[] not null,
+  enrichment_data         jsonb default '{}'::jsonb not null,
+  enriched_at             timestamptz,
+  embedding               public.vector(1536),
+  is_deleted              boolean default false not null,
+  created_at              timestamptz default now() not null,
+  updated_at              timestamptz default now() not null,
+  constraint companies_pkey primary key (id),
+  constraint companies_org_id_fkey foreign key (org_id)
+    references public.organizations(id) on delete cascade,
+  constraint companies_owner_id_fkey foreign key (owner_id)
+    references auth.users(id) on delete set null
+);
+
+create unique index if not exists companies_org_place_id_uniq
+  on public.companies (org_id, google_place_id) where google_place_id is not null;
+create index if not exists companies_org_id_idx on public.companies (org_id);
+create index if not exists companies_org_domain_idx
+  on public.companies (org_id, domain) where domain is not null;
+create index if not exists companies_tags_gin_idx on public.companies using gin (tags);
+
+create table if not exists public.deals (
+  id                   uuid default gen_random_uuid() not null,
+  org_id               uuid not null,
+  company_id           uuid,
+  owner_id             uuid,
+  pipeline_id          uuid not null,
+  stage_id             uuid not null,
+  title                text not null,
+  value                numeric default 0 not null,
+  currency             text default 'BRL' not null,
+  status               text default 'open' not null,
+  probability          integer,
+  expected_close       date,
+  actual_close         date,
+  lost_reason          text,
+  source               text,
+  sentiment_score      numeric,
+  sentiment_state      text,
+  sentiment_updated_at timestamptz,
+  sniper_score         numeric,
+  sniper_updated_at    timestamptz,
+  last_activity_at     timestamptz,
+  tags                 text[] default '{}'::text[] not null,
+  custom_fields        jsonb default '{}'::jsonb not null,
+  is_deleted           boolean default false not null,
+  created_at           timestamptz default now() not null,
+  updated_at           timestamptz default now() not null,
+  constraint deals_pkey primary key (id),
+  constraint deals_org_id_fkey foreign key (org_id)
+    references public.organizations(id) on delete cascade,
+  constraint deals_company_id_fkey foreign key (company_id)
+    references public.companies(id) on delete set null,
+  constraint deals_owner_id_fkey foreign key (owner_id)
+    references auth.users(id) on delete set null,
+  constraint deals_pipeline_id_fkey foreign key (pipeline_id)
+    references public.crm_pipelines(id) on delete restrict,
+  constraint deals_stage_id_fkey foreign key (stage_id)
+    references public.crm_stages(id) on delete restrict,
+  constraint deals_probability_range
+    check (probability is null or (probability >= 0 and probability <= 100)),
+  constraint deals_currency_iso4217 check (currency ~ '^[A-Z]{3}$')
+);
+
+create index if not exists deals_org_id_idx on public.deals (org_id);
+create index if not exists deals_org_pipeline_stage_idx
+  on public.deals (org_id, pipeline_id, stage_id);
+create index if not exists deals_company_id_idx
+  on public.deals (company_id) where company_id is not null;
+create index if not exists deals_tags_gin_idx on public.deals using gin (tags);
+
+create table if not exists public.linkedin_threads (
+  id                 uuid default gen_random_uuid() not null,
+  org_id             uuid not null,
+  contact_id         uuid,
+  deal_id            uuid,
+  owner_id           uuid,
+  linkedin_thread_id text,
+  message_count      integer default 0 not null,
+  last_message_at    timestamptz,
+  sentiment_score    numeric,
+  sentiment_state    text,
+  created_at         timestamptz default now() not null,
+  updated_at         timestamptz default now() not null,
+  constraint linkedin_threads_pkey primary key (id),
+  constraint linkedin_threads_org_id_fkey foreign key (org_id)
+    references public.organizations(id) on delete cascade,
+  constraint linkedin_threads_contact_id_fkey foreign key (contact_id)
+    references public.contacts(id) on delete set null,
+  constraint linkedin_threads_deal_id_fkey foreign key (deal_id)
+    references public.deals(id) on delete set null,
+  constraint linkedin_threads_owner_id_fkey foreign key (owner_id)
+    references auth.users(id) on delete set null
+);
+
+create unique index if not exists linkedin_threads_org_external_uniq
+  on public.linkedin_threads (org_id, linkedin_thread_id)
+  where linkedin_thread_id is not null;
+create index if not exists linkedin_threads_org_id_idx on public.linkedin_threads (org_id);
+create index if not exists linkedin_threads_contact_id_idx
+  on public.linkedin_threads (contact_id) where contact_id is not null;
+create index if not exists linkedin_threads_deal_id_idx
+  on public.linkedin_threads (deal_id) where deal_id is not null;
+
+create or replace trigger companies_updated_at
+  before update on public.companies
+  for each row execute function public.fn_set_updated_at();
+create or replace trigger deals_updated_at
+  before update on public.deals
+  for each row execute function public.fn_set_updated_at();
+create or replace trigger linkedin_threads_updated_at
+  before update on public.linkedin_threads
+  for each row execute function public.fn_set_updated_at();
+
+alter table public.companies        enable row level security;
+alter table public.deals            enable row level security;
+alter table public.linkedin_threads enable row level security;
+
+drop policy if exists tenant_isolation_companies_all on public.companies;
+create policy tenant_isolation_companies_all on public.companies
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
+  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+
+drop policy if exists tenant_isolation_deals_all on public.deals;
+create policy tenant_isolation_deals_all on public.deals
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
+  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+
+drop policy if exists tenant_isolation_linkedin_threads_all on public.linkedin_threads;
+create policy tenant_isolation_linkedin_threads_all on public.linkedin_threads
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
+  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+
+revoke all on table public.companies        from anon;
+revoke all on table public.deals            from anon;
+revoke all on table public.linkedin_threads from anon;
+
+
+-- ---- convergência: extraction_runs, rpc_upsert_lead e a fusão de contacts (migration 0233) ----
+--
+-- `contacts` do AIOS e do chassi eram DUAS tabelas colididas no mesmo nome. Aqui
+-- viram UMA: a do chassi (que carrega LGPD, consentimento, anonimização) é a
+-- canônica, e ganha só as colunas que trazem fato novo. Vinte e uma tabelas
+-- apontam para `contacts` — conversations, messages, crm_leads, lead_state… —
+-- então prospect raspado em tabela paralela nunca receberia WhatsApp nem entraria
+-- num funil. Uma pessoa = uma linha é o que mantém o Closed Loop contínuo.
+--
+-- A chave de tenant NÃO é duplicada: `org_id` ao lado de `organization_id` faria
+-- a RLS filtrar uma coluna enquanto o writer grava a outra. O writer converge.
+-- O telefone raspado passa por fn_e164_or_null() — a constraint E.164 do chassi
+-- é alimentada, nunca relaxada.
+
+create table if not exists public.extraction_runs (
+  id                uuid default gen_random_uuid() not null,
+  org_id            uuid not null,
+  source            text not null,
+  status            text default 'pending' not null,
+  apify_actor_id    text,
+  apify_run_id      text,
+  query             text,
+  cnae_codes        text[],
+  location          text,
+  max_results       integer default 100 not null,
+  results_count     integer default 0 not null,
+  companies_created integer default 0 not null,
+  contacts_created  integer default 0 not null,
+  raw_data          jsonb,
+  error_message     text,
+  created_by        uuid,
+  started_at        timestamptz,
+  completed_at      timestamptz,
+  created_at        timestamptz default now() not null,
+  constraint extraction_runs_pkey primary key (id),
+  constraint extraction_runs_org_id_fkey foreign key (org_id)
+    references public.organizations(id) on delete cascade,
+  constraint extraction_runs_created_by_fkey foreign key (created_by)
+    references auth.users(id) on delete set null,
+  constraint extraction_runs_source_check check (source in (
+    'google_maps', 'apify_google_maps',
+    'linkedin', 'apify_linkedin',
+    'instagram', 'apify_instagram',
+    'manual', 'phantombuster_linkedin', 'cnae_scraper'
+  )),
+  constraint extraction_runs_status_check check (status in (
+    'pending', 'running', 'completed', 'succeeded', 'failed', 'aborted'
+  ))
+);
+
+create index if not exists extraction_runs_org_created_idx
+  on public.extraction_runs (org_id, created_at desc);
+
+-- NÃO-único de propósito: um UNIQUE proibiria duas extrações legítimas do mesmo
+-- source com queries diferentes (google_maps de SP e do Rio ao mesmo tempo).
+create index if not exists extraction_runs_active_by_source_idx
+  on public.extraction_runs (org_id, source)
+  where status in ('pending', 'running');
+
+alter table public.extraction_runs enable row level security;
+
+drop policy if exists tenant_isolation_extraction_runs_all on public.extraction_runs;
+create policy tenant_isolation_extraction_runs_all on public.extraction_runs
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
+  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+
+revoke all on table public.extraction_runs from anon;
+
+alter table public.contacts add column if not exists company_id        uuid;
+alter table public.contacts add column if not exists apify_run_id      text;
+alter table public.contacts add column if not exists preferred_channel text;
+
+do $$
+begin
+  alter table public.contacts
+    add constraint contacts_company_id_fkey foreign key (company_id)
+    references public.companies(id) on delete set null;
+exception
+  when duplicate_object then null;
+end $$;
+
+create index if not exists contacts_company_id_idx
+  on public.contacts (company_id) where company_id is not null;
+create index if not exists contacts_org_apify_run_idx
+  on public.contacts (organization_id, apify_run_id) where apify_run_id is not null;
+
+create or replace function public.fn_e164_or_null(p_raw text)
+returns text
+language sql
+immutable
+set search_path = pg_temp
+as $$
+  select case
+    when p_raw is null or btrim(p_raw) = '' then null
+    when btrim(p_raw) !~ '^\+' then null
+    when '+' || regexp_replace(p_raw, '\D', '', 'g') ~ '^\+\d{8,15}$'
+      then '+' || regexp_replace(p_raw, '\D', '', 'g')
+    else null
+  end
+$$;
+
+revoke execute on function public.fn_e164_or_null(text) from public, anon;
+grant  execute on function public.fn_e164_or_null(text) to service_role;
+
+drop function if exists public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+);
+
+create function public.rpc_upsert_lead(
+  p_org_id            uuid,
+  p_name              text,
+  p_lead_origin       text,
+  p_traffic_source    text,
+  p_meta_campaign_id  text,
+  p_meta_adset_id     text,
+  p_meta_ad_id        text,
+  p_first_name        text,
+  p_last_name         text default null,
+  p_phone             text default null,
+  p_email             text default null
+)
+returns table (company_id uuid, contact_id uuid)
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_company_id uuid;
+  v_contact_id uuid;
+  v_name       text;
+  v_phone      text;
+  v_meta       jsonb;
+begin
+  insert into public.companies (
+    org_id, name, lead_origin, traffic_source,
+    meta_campaign_id, meta_adset_id, meta_ad_id,
+    status, source
+  )
+  values (
+    p_org_id, p_name, p_lead_origin, p_traffic_source,
+    p_meta_campaign_id, p_meta_adset_id, p_meta_ad_id,
+    'novo', 'manual'
+  )
+  returning id into v_company_id;
+
+  v_name := nullif(btrim(concat_ws(' ', nullif(btrim(p_first_name), ''),
+                                        nullif(btrim(p_last_name), ''))), '');
+
+  v_phone := public.fn_e164_or_null(p_phone);
+  v_meta := jsonb_build_object('ingested_by', 'rpc_upsert_lead');
+  if p_phone is not null and btrim(p_phone) <> '' and v_phone is null then
+    v_meta := v_meta || jsonb_build_object('phone_raw', p_phone);
+  end if;
+
+  insert into public.contacts (
+    organization_id, company_id, name, email, phone_number,
+    source, source_metadata
+  )
+  values (
+    p_org_id, v_company_id, v_name, p_email, v_phone,
+    'manual', v_meta
+  )
+  returning id into v_contact_id;
+
+  return query select v_company_id, v_contact_id;
+end;
+$$;
+
+revoke all on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) from public, anon;
+
+grant execute on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) to service_role;
+
+
+-- ---- execução converge com a intenção: revoke de authenticated (migration 0234) ----
+-- A 0233 fechou `public, anon` nas suas duas funções e declarou "caller
+-- esperado: service_role". O ACL real trazia `authenticated=X` — porque este
+-- baseline tem QUATRO linhas de ALTER DEFAULT PRIVILEGES ... ON FUNCTIONS
+-- (postgres, anon, authenticated, service_role), e a doutrina só nomeia duas
+-- origens. Toda função criada por apêndice nasce também com a de
+-- `authenticated`, que ninguém escreve e por isso ninguém revisa.
+-- Não era vazamento cross-tenant (o `security invoker` da 0233 segurou: um
+-- viewer da org A chamando com p_org_id da org B toma 42501), mas é deriva
+-- entre o declarado e o real — e o guarda-costas é uma palavra só. Idempotente:
+-- revoke de privilégio ausente é no-op.
+revoke execute on function public.fn_e164_or_null(text)
+  from public, anon, authenticated;
+grant  execute on function public.fn_e164_or_null(text)
+  to service_role;
+
+revoke execute on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) from public, anon, authenticated;
+grant execute on function public.rpc_upsert_lead(
+  uuid, text, text, text, text, text, text, text, text, text, text
+) to service_role;
+
+
 -- ---- VARREDURA anon: função nova nasce exposta em quem ATUALIZA (migration 0116) ----
 --
 -- ⚠️ ESTE BLOCO É, DE PROPÓSITO, O ÚLTIMO DO ARQUIVO. Apêndice novo entra ANTES

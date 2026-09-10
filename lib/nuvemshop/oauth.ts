@@ -16,6 +16,12 @@ import {
   type NuvemshopConfig,
 } from "./config";
 
+/**
+ * Prazo da troca de código por token. Mais curto que o da API de dados: aqui há
+ * um humano parado numa tela em branco, recém-devolvido da tela de consentimento.
+ */
+const TIMEOUT_OAUTH_MS = 8_000;
+
 export interface AuthorizeUrlInput {
   appId: string;
   state: string;
@@ -74,6 +80,9 @@ export async function exchangeCodeForToken(
       body,
       // OAuth token endpoints must never be cached.
       cache: "no-store",
+      // Prazo explícito: sem ele a troca de código fica pendurada até o timeout
+      // do SO, e o usuário volta do consentimento para uma tela que não responde.
+      signal: AbortSignal.timeout(TIMEOUT_OAUTH_MS),
     });
   } catch (err) {
     return { ok: false, error: "network_error", raw: (err as Error).message };

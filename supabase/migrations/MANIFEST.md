@@ -41,6 +41,38 @@ tabelas que as migrations-stub `0001`–`0009` nunca criaram — medido: 21 apli
 O caminho de instalação suportado é o `supabase/baseline.sql`, que é o que o kit self-host
 aplica.
 
+## Nota — renumeração 0144–0146 → 0232–0234 na fusão com o upstream v1.17.0 (2026-09-10)
+
+As três migrations do fork Nexora que ligam o Módulo de Tráfego AIOS ao chassi nasceram como
+`0144_ponte_de_dados_aios`, `0145_convergencia_contacts_e_extracao` e
+`0146_execucao_converge_com_a_intencao` (timestamps `20260813120000`, `20260813180000`,
+`20260819120000`). O upstream DeskcommCRM já ocupava `0144`–`0146` (followup timing, dossiê do
+follow-up, claim justo) e chegou a `0230` na v1.17.0 — dois arquivos disputando o mesmo `NNNN`
+quebram a catraca deste MANIFEST e confundem quem lê o apêndice do baseline.
+
+Remédio: **conteúdo byte-a-byte idêntico, só o número e o timestamp mudam.**
+
+| Antes | Depois |
+|---|---|
+| `20260813120000_0144_ponte_de_dados_aios` | `20260910120000_0232_ponte_de_dados_aios` |
+| `20260813180000_0145_convergencia_contacts_e_extracao` | `20260910121000_0233_convergencia_contacts_e_extracao` |
+| `20260819120000_0146_execucao_converge_com_a_intencao` | `20260910122000_0234_execucao_converge_com_a_intencao` |
+
+O timestamp novo é posterior à `0230` (`20260907060000`), então a ordem de aplicação do CLI
+respeita a dependência real: as três precisam de `organizations`, `crm_pipelines`, `crm_stages`,
+`contacts` e `fn_set_updated_at`, que o chassi já entregou. Banco de clone que aplicou as versões
+`2026081*` antigas **não** as reaplica em dobro: todo objeto é `if not exists` / `create or replace`,
+e a constraint de `contacts.company_id` é criada dentro de `do $$ ... exception when duplicate_object`.
+
+**As dez migrations herdadas do fork AIOS pré-convergência** (`initial_schema`, `linkedin_schema`,
+`fix_rls_security`, `update_extraction_runs_constraints`, `add_tracking_columns_to_companies`,
+`tenancy_shim_platform_base`, `add_closed_loop_tracking_to_companies`, `create_rpc_upsert_lead` ×2,
+`create_ai_studio_schema`) **não entram nesta linhagem.** Elas descrevem uma segunda tabela
+`contacts` e um segundo `user_organizations` que colidem com o chassi — é a colisão que a `0233`
+existe para encerrar — e a `0232`/`0233` já recriam, de forma aditiva e idempotente, tudo o que o
+código consome delas (`companies`, `deals`, `linkedin_threads`, `extraction_runs`,
+`rpc_upsert_lead`). Um banco fresco que as aplicasse em ordem quebraria no `initial_schema`.
+
 ## Applied
 
 | Version | Name | Description |
@@ -285,3 +317,6 @@ To re-apply on a fresh Supabase project, replay the migrations in version order 
 | `20260907050000` | `0229_mfa_e_lgpd_agenda` | MFA nas quatro ações humanas, ordem de locks LGPD/agenda e footprint de avisos de presença/Meet na redação; baseline e backfill idempotentes. |
 
 | `20260907060000` | `0230_reserva_pre_go_live` | A reserva transacional de novos canais WAHA preserva o pré-go-live da plataforma; retry mantém política e identidade existentes. Forward-fix da integração, sem alterar 0228 aplicada. |
+| `20260910120000` | `0232_ponte_de_dados_aios` | **Ponte de Dados AIOS: `companies`, `deals` e `linkedin_threads` entram no chassi.** (Renumerada de `0144` na fusão v1.17.0 — ver nota acima.) Fusão do Módulo de Tráfego AIOS (backend Hono em `src/`) com o banco DeskcommCRM — três tabelas NOVAS, aditivas, tenant-aware; nada do chassi é alterado. O contrato de colunas vem de `src/types/database.ts`. As FKs do contrato citavam tabelas que o chassi não tem e foram re-apontadas para o que existe: `profiles`→`auth.users`, `pipelines`→`crm_pipelines`, `pipeline_stages`→`crm_stages` — mantendo os nomes `<tabela>_<coluna>_fkey`. Desvios conscientes: coluna de tenant é `org_id` (renomear quebraria todo `src/`; a RLS usa o MESMO `fn_user_org_ids()` do chassi), `deals.value numeric`+`currency` em vez de `_cents` (contrato AIOS), e `status` sem CHECK (vocabulário aberto). Dedup pela doutrina de external_id: unique parcial `(org_id, google_place_id)` e `(org_id, linkedin_thread_id)`. Segurança: RLS `tenant_isolation_<t>_all` + `revoke all from anon` (lição da 0143: tabela nova nasce concedida pelo ALTER DEFAULT PRIVILEGES). Vigiada por `tests/invariants/convergencia-aios-contacts.test.ts`. |
+| `20260910121000` | `0233_convergencia_contacts_e_extracao` | **Quita a dívida da 0232: `extraction_runs`, `rpc_upsert_lead` e a fusão de `contacts`.** (Renumerada de `0145`.) **A decisão central: `contacts` do AIOS e do chassi nunca foram "a mesma tabela com nomes diferentes" — eram DUAS tabelas que colidiram no mesmo nome durante o fork.** Vinte e uma tabelas apontam para `public.contacts`, então um prospect raspado numa tabela paralela nunca receberia WhatsApp nem entraria num funil. O chassi vence como canônico (LGPD, consentimento, CPF criptografado, anonimização, merge) e recebe **só 3 colunas** de fato novo: `company_id` (FK → companies, ON DELETE SET NULL), `apify_run_id` e `preferred_channel`. Todo o resto converge por DIRC para coluna existente (`org_id`→`organization_id`, `phone`→`phone_number`, `first/last_name`→`name`, `owner_id`→`created_by_user_id`, `do_not_contact`→`is_blocked`). **A chave de tenant NÃO foi duplicada** — `org_id` ao lado de `organization_id` faria a RLS filtrar uma coluna enquanto o writer grava a outra. **O CHECK E.164 do chassi não foi relaxado, foi alimentado**: `fn_e164_or_null()` normaliza só quando o valor é inequivocamente internacional; o valor cru fica em `source_metadata.phone_raw`. `rpc_upsert_lead` reescrita com assinatura e retorno idênticos (11 params, 3 com DEFAULT NULL), `security invoker` de propósito. `extraction_runs` com os CHECKs da migration AIOS original e índice parcial **não-único** de run ativa. **Achado de segurança fora do escopo, NÃO corrigido:** o webhook `/api/webhooks/aios-lead` (quando importado) autentica com um único segredo e lê `org_id` do BODY. |
+| `20260910122000` | `0234_execucao_converge_com_a_intencao` | **Forward-fix da 0233: a TERCEIRA origem de `EXECUTE`.** (Renumerada de `0146`.) A 0233 terminou com o ritual do CLAUDE.md §9 — `revoke ... from public, anon` + `grant ... to service_role` — e o ACL medido dizia outra coisa: `rpc_upsert_lead` e `fn_e164_or_null` tinham `authenticated=X/postgres`, porque o baseline tem **quatro** linhas irmãs de `ALTER DEFAULT PRIVILEGES ... GRANT ALL ON FUNCTIONS` (postgres, anon, **authenticated**, service_role). **NÃO era vazamento cross-tenant**: um `viewer` da org A chamando `rpc_upsert_lead(p_org_id => B)` recebe `42501` — o `security invoker` segurou. É deriva entre a intenção declarada e o estado real, e importa porque no dia em que alguém trocar `invoker` por `definer` o grant a `authenticated` vira escrita cross-tenant. Vigiado por `tests/invariants/convergencia-aios-contacts.test.ts`, que afirma o **conjunto exato** de grantees (`{postgres, service_role}`). Idempotente: `revoke` de privilégio ausente é no-op. |

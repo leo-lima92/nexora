@@ -45,7 +45,7 @@ export function AttachMenu({ disabled, onPick, onPickContact }: Props) {
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
             onClick={() => mediaRef.current?.click()}
           >
-            <ImageSquare size={18} weight="duotone" className="text-primary" aria-hidden />
+            <ImageSquare size={18} weight="duotone" className="text-text-subtle" aria-hidden />
             {t("Fotos e vídeos")}
           </button>
           <button
@@ -53,7 +53,7 @@ export function AttachMenu({ disabled, onPick, onPickContact }: Props) {
             className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted"
             onClick={() => docRef.current?.click()}
           >
-            <FileText size={18} weight="duotone" className="text-primary" aria-hidden />
+            <FileText size={18} weight="duotone" className="text-text-subtle" aria-hidden />
             {t("Documento")}
           </button>
           {onPickContact && (

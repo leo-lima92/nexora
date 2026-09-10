@@ -43,7 +43,7 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
 
   return (
     <section>
-      <h3 className="text-xs font-semibold text-text">
+      <h3 className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle">
         {t("Tags da conversa")}
       </h3>
 
@@ -104,7 +104,7 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
               type="button"
               onClick={() => add(tag)}
               disabled={mutation.isPending || tags.length >= 20}
-              className="rounded-full border border-dashed border-border px-2 py-0.5 text-[10px] text-muted-foreground hover:border-solid hover:text-foreground disabled:opacity-50"
+              className="rounded-md border border-dashed border-border-strong px-2 py-0.5 text-[10px] uppercase tracking-eyebrow text-text-subtle transition-colors duration-fast hover:border-solid hover:text-text disabled:opacity-50"
             >
               + {tag}
             </button>

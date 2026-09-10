@@ -92,8 +92,9 @@ export function StageColumn({
     : undefined;
 
   return (
-    <div className="flex w-80 shrink-0 flex-col rounded-lg border border-border bg-surface-muted/40">
-      <div className="group/etapa flex items-center gap-2 border-b border-border px-3 py-2.5">
+    <div className="flex w-80 shrink-0 flex-col">
+      <div className="group/etapa shrink-0 px-1 pb-3">
+        <div className="flex items-center gap-2">
         {/* "Selecionar a etapa inteira" é o gesto que faz a ação em lote valer a
             pena: sem ele, mover trinta cards deixa de ser trinta arrastes e vira
             trinta cliques com modificador. Fica no cabeçalho porque é ali que a
@@ -122,25 +123,31 @@ export function StageColumn({
         />
         <span
           className={cn(
-            "h-2 w-2 rounded-full",
-            !stage.color && "bg-text-muted/40",
+            "h-1.5 w-1.5 shrink-0 rounded-full",
+            !stage.color && "bg-border-strong",
           )}
           style={accentStyle}
           aria-hidden
         />
-        <h2 className="flex-1 truncate text-sm font-semibold text-text">
+        <h2 className="min-w-0 flex-1 truncate text-xs font-medium uppercase tracking-eyebrow text-text-muted">
           {stage.name}
         </h2>
-        <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-medium tabular-nums text-text-muted">
+        <span className="shrink-0 font-mono text-xs tabular-nums text-text-subtle">
           {selecionadosAqui > 0 ? `${selecionadosAqui}/${leads.length}` : leads.length}
         </span>
-      </div>
-
-      {totalCents > 0 && (
-        <div className="border-b border-border px-3 py-1.5 text-[11px] tabular-nums text-text-muted">
-          {formatBRL(totalCents)}
         </div>
-      )}
+
+        {/* O total da etapa é o número que o gestor procura primeiro — então ele
+            sai do registro de nota de rodapé e vira o dado com mais peso do
+            cabeçalho, em mono tabular para alinhar coluna a coluna. */}
+        {totalCents > 0 && (
+          <div className="mt-1.5 font-mono text-lg font-medium tracking-title tabular-nums text-text">
+            {formatBRL(totalCents)}
+          </div>
+        )}
+
+        <div className="mt-2 h-px bg-border-strong" aria-hidden />
+      </div>
 
       <Droppable droppableId={stage.id} type="LEAD">
         {(provided, snapshot) => (
@@ -148,8 +155,11 @@ export function StageColumn({
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              "flex flex-1 flex-col gap-2 p-2 transition-colors",
-              snapshot.isDraggingOver && "bg-accent/5",
+              "flex flex-1 flex-col gap-2.5 rounded-md px-1 pb-2 pt-0.5 transition-colors duration-fast ease-out",
+              // Alvo de soltura em CHAPA, não em cor: pintar a coluna de
+              // vermillion translúcida gastaria a única cor de ação da tela
+              // para dizer "pode largar aqui", que não é uma conversão.
+              snapshot.isDraggingOver && "bg-surface-elevated",
             )}
           >
             {leads.map((lead, idx) => (
@@ -174,7 +184,7 @@ export function StageColumn({
             ))}
             {provided.placeholder}
             {leads.length === 0 && !snapshot.isDraggingOver && (
-              <div className="flex h-20 items-center justify-center text-[11px] text-text-muted">
+              <div className="flex h-20 items-center justify-center rounded-md border border-dashed border-border text-xs uppercase tracking-eyebrow text-text-subtle">
                 {t("vazio")}
               </div>
             )}

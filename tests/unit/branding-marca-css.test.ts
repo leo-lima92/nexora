@@ -275,10 +275,15 @@ describe("allowlist de FORMA de valor", () => {
 
 describe("o que a derivação move e o CSS ainda não emite", () => {
   it("toda semântica deslocada vira um motivo de não-serialização", () => {
-    // O par com rótulo: a derivação DIZ que girou `--color-success`; se o CSS
-    // não a emite, o log precisa dizer isso também — senão o motivo descreve um
+    // O par com rótulo: a derivação DIZ que girou uma semântica; se o CSS não a
+    // emite, o log precisa dizer isso também — senão o motivo descreve um
     // movimento que a tela não faz.
-    const cor = corDe("#22c55e");
+    //
+    // `#dc2626` e não `#22c55e`: na paleta Orderful o verde do cliente já folga
+    // do `success` (#346538) sob dicromacia e não move nada (medido em
+    // 2026-09-10: 0 movidas). O vermelho move 3 (claro/success, claro/warning,
+    // escuro/error) — é a semente que dá ao teste algo para contar.
+    const cor = corDe("#dc2626");
     const movidas = (cor.derivada?.motivos ?? []).filter(
       (m) => m.codigo === "semantica_deslocada",
     );

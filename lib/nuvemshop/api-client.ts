@@ -8,6 +8,12 @@
 
 import { APP_USER_AGENT, NUVEMSHOP_API_BASE, type NuvemshopEvent } from "./config";
 
+/**
+ * Prazo de resposta do provedor. 10s é folgado para uma API REST de catálogo e
+ * curto o bastante para a tela falhar com mensagem em vez de parecer travada.
+ */
+const TIMEOUT_MS = 10_000;
+
 export class NuvemshopApiError extends Error {
   status: number;
   code: string;
@@ -80,6 +86,10 @@ export class NuvemshopApiClient {
         headers: this.headers(),
         body: body !== undefined ? JSON.stringify(body) : undefined,
         cache: "no-store",
+        // Sem prazo, um provedor que aceita a conexão e nunca responde prende a
+        // requisição até o SO desistir (~95s medido). O `catch` abaixo já sabe
+        // virar `network_error`; o que faltava era ele ser ALCANÇADO a tempo.
+        signal: AbortSignal.timeout(TIMEOUT_MS),
       });
     } catch (err) {
       throw new NuvemshopApiError(0, "network_error", String((err as Error).message));

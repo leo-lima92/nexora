@@ -3548,6 +3548,19 @@ export const DICIONARIO: Traducoes = {
   },
   Verificado: { es: "Verificado" },
   "Ainda não verificado": { es: "Todavía no verificado" },
+  "Não verificado agora": { es: "No verificado ahora" },
+  "último contato": { es: "último contacto" },
+  "Serviço não conectado — os status abaixo são o último estado conhecido": {
+    es: "Servicio no conectado — los estados de abajo son el último estado conocido",
+  },
+  "Não foi possível falar com o serviço de WhatsApp para confirmar a saúde dos canais agora.": {
+    es: "No fue posible hablar con el servicio de WhatsApp para confirmar la salud de los canales ahora.",
+  },
+  "1 canal não pôde ser verificado.": { es: "1 canal no pudo ser verificado." },
+  "canais não puderam ser verificados.": { es: "canales no pudieron ser verificados." },
+  "Mensagens podem não sair enquanto isso durar.": {
+    es: "Los mensajes pueden no salir mientras esto dure.",
+  },
   "Proteção de envio": { es: "Protección de envío" },
   "indisponível enquanto o serviço do WhatsApp não estiver ativo": {
     es: "no disponible mientras el servicio de WhatsApp no esté activo",

@@ -20,10 +20,32 @@ import { createClient } from "@supabase/supabase-js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-/** Lê env do processo; completa com .env / .env.local se rodando localmente. */
+/**
+ * Lê env do processo; completa com .env.local / .env se rodando localmente.
+ *
+ * ⚠️ A ORDEM DESTA LISTA É A DIFERENÇA ENTRE ESCREVER NO BANCO LOCAL E
+ * ESCREVER NO BANCO DE PRODUÇÃO.
+ *
+ * A chave é preenchida pelo PRIMEIRO arquivo que a define (o `if (!out[...])`
+ * abaixo), então quem vem primeiro na lista vence. Até 2026-09-02 a ordem era
+ * `[".env", ".env.local"]` — o inverso do que o Next.js faz e do que qualquer
+ * pessoa espera. Consequência medida naquele dia: um `.env` de checkout de
+ * trabalho aponta para o Supabase de PRODUÇÃO, um `.env.local` recém-gerado
+ * apontava para o Supabase local, e este script criou dono, organização e
+ * linha de `platform_admins` **na nuvem** — imprimindo "Bootstrap completo" e
+ * mandando entrar em localhost:3000. As linhas tiveram de ser apagadas de
+ * produção à mão.
+ *
+ * É a mesma família de falha que `scripts/gerar-env-e2e.sh` documenta ter
+ * custado caro antes (a suíte E2E escrevendo no banco real). O modo de falha
+ * silencioso é o caro: o script não erra, ele acerta o alvo errado.
+ *
+ * `process.env` continua vencendo os dois — é como o `install.sh` entrega os
+ * valores, e é o override explícito de quem sabe o que está fazendo.
+ */
 function loadEnv(): Record<string, string> {
   const out: Record<string, string> = { ...process.env } as Record<string, string>;
-  for (const file of [".env", ".env.local"]) {
+  for (const file of [".env.local", ".env"]) {
     const p = path.join(process.cwd(), file);
     if (!fs.existsSync(p)) continue;
     for (const line of fs.readFileSync(p, "utf8").split("\n")) {

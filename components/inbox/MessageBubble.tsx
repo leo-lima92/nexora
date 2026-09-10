@@ -26,13 +26,13 @@ interface Props {
 
 function AckIndicator({ status, t }: { status: string; t: (texto: string) => string }) {
   if (status === "read") {
-    return <Checks size={12} weight="bold" className="text-blue-400" aria-label={t("Lida")} />;
+    return <Checks size={12} weight="bold" className="opacity-100" aria-label={t("Lida")} />;
   }
   if (status === "delivered") {
-    return <Checks size={12} weight="bold" className="text-current/70" aria-label={t("Entregue")} />;
+    return <Checks size={12} weight="bold" className="opacity-55" aria-label={t("Entregue")} />;
   }
   if (status === "sent") {
-    return <Check size={12} weight="bold" className="text-current/70" aria-label={t("Enviada")} />;
+    return <Check size={12} weight="bold" className="opacity-55" aria-label={t("Enviada")} />;
   }
   return null;
 }
@@ -57,11 +57,8 @@ export function MessageBubble({ message, debugCitations, onResponder, citada }: 
   const citations = extractCitations(message.metadata);
   const showCitationButton =
     isOutbound && aiGenerated && (debugCitations ?? false);
-  const senderLabel = (() => {
-    if (!isOutbound) return null;
-    if (message.sent_via === "ai") return "IA";
-    return null;
-  })();
+  const isAi = isOutbound && message.sent_via === "ai";
+  const senderLabel = isAi ? "IA" : null;
 
   return (
     <div
@@ -107,16 +104,26 @@ export function MessageBubble({ message, debugCitations, onResponder, citada }: 
       )}
       <div
         className={cn(
-          "max-w-[75%] text-sm",
+          "max-w-[75%] text-sm leading-normal",
           isBareSticker
             ? "px-0 py-0"
             : cn(
-                "rounded-2xl px-3 py-2 shadow-sm",
-                isOutbound
-                  ? "rounded-br-sm bg-primary text-primary-foreground"
-                  : "rounded-bl-sm bg-muted text-foreground",
+                // 8px em todas as quatro quinas, sem "rabinho" e sem sombra: o
+                // deck tem UM raio, e a bolha não é exceção.
+                "rounded-md px-3.5 py-2.5",
+                // TRÊS registros de bolha, como no canvas aprovado. O que era
+                // `bg-primary` viraria vermillion chapada em toda mensagem
+                // enviada — a tela inteira vermelha, e a cor de conversão sem
+                // valor nenhum. Quem fala com voz de operador é a CHAPA DE
+                // CARBONO; o agente fala em Vellum; o cliente, em Paper.
+                isFailed
+                  ? "border border-error bg-error-bg text-error-fg"
+                  : isOutbound
+                    ? isAi
+                      ? "border border-border bg-surface-elevated text-text"
+                      : "bg-carbon text-text-on-carbon"
+                    : "border border-border bg-surface text-text",
               ),
-          isFailed && "border border-destructive",
         )}
       >
         {/*
@@ -155,7 +162,7 @@ export function MessageBubble({ message, debugCitations, onResponder, citada }: 
           </div>
         )}
         {senderLabel && (
-          <div className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold opacity-80">
+          <div className="mb-1 flex items-center gap-1 text-[11px] font-medium uppercase tracking-eyebrow text-text-subtle">
             {senderLabel === "IA" ? (
               <Robot size={10} weight="duotone" aria-hidden />
             ) : null}
@@ -185,15 +192,18 @@ export function MessageBubble({ message, debugCitations, onResponder, citada }: 
             )}
 
             {message.body && !isContact && (
-              <p className="whitespace-pre-wrap break-words leading-snug">{message.body}</p>
+              <p className="whitespace-pre-wrap break-words leading-normal">{message.body}</p>
             )}
           </>
         )}
 
         <div
           className={cn(
-            "mt-1 flex items-center justify-end gap-1 text-[10px]",
-            isOutbound ? "text-primary-foreground" : "text-muted-foreground",
+            "mt-1.5 flex items-center justify-end gap-1 font-mono text-[11px] tabular-nums",
+            // Sem alfa no texto: no Tailwind 4 o `/60` PINTA e a hora dentro da
+            // chapa de Carbon cairia abaixo do piso. A hierarquia vem do corpo
+            // (11px mono) — a cor fica cheia.
+            isOutbound && !isAi && !isFailed ? "text-text-on-carbon" : "text-text-subtle",
           )}
         >
           {editada && (
@@ -215,7 +225,7 @@ export function MessageBubble({ message, debugCitations, onResponder, citada }: 
             <TooltipProvider delayDuration={200}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="inline-flex items-center gap-0.5 font-semibold text-destructive">
+                  <span className="inline-flex items-center gap-0.5 font-medium uppercase tracking-eyebrow">
                     <WarningOctagon size={10} weight="fill" aria-hidden /> {t("Falhou")}
                   </span>
                 </TooltipTrigger>

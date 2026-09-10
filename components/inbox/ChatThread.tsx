@@ -148,7 +148,7 @@ export function ChatThread({ conversationId, onResponder }: Props) {
     return (
       <div
         {...sinalDoCanal}
-        className="flex h-full items-center justify-center text-sm text-muted-foreground"
+        className="flex h-full items-center justify-center text-sm text-text-subtle"
       >
         {t("Selecione uma conversa")}
       </div>
@@ -169,7 +169,7 @@ export function ChatThread({ conversationId, onResponder }: Props) {
     return (
       <div
         {...sinalDoCanal}
-        className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground"
+        className="flex h-full flex-col items-center justify-center gap-2 text-sm text-text-subtle"
       >
         <p>{t("Erro ao carregar mensagens.")}</p>
         <Button size="sm" variant="outline" onClick={() => q.refetch()}>
@@ -183,7 +183,7 @@ export function ChatThread({ conversationId, onResponder }: Props) {
     return (
       <div
         {...sinalDoCanal}
-        className="flex h-full items-center justify-center text-sm text-muted-foreground"
+        className="flex h-full items-center justify-center text-sm text-text-subtle"
       >
         {t("Nenhuma mensagem nesta conversa.")}
       </div>
@@ -202,7 +202,7 @@ export function ChatThread({ conversationId, onResponder }: Props) {
 
   return (
     <div {...sinalDoCanal} className="flex h-full flex-col">
-      <div ref={scrollerRef} className="flex-1 overflow-y-auto py-2">
+      <div ref={scrollerRef} className="flex-1 overflow-y-auto bg-surface-sunken py-3">
         {q.hasNextPage && (
           <div className="flex justify-center py-2">
             <Button
@@ -217,9 +217,9 @@ export function ChatThread({ conversationId, onResponder }: Props) {
         )}
 
         {groups.map((g) => (
-          <div key={g.key} className="space-y-1">
+          <div key={g.key} className="space-y-1.5">
             <div className="sticky top-0 z-10 flex justify-center py-1">
-              <span className="rounded-full bg-background/80 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground backdrop-blur">
+              <span className="rounded-md border border-border bg-surface px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-eyebrow text-text-subtle">
                 {dayLabel(g.date, t, localeDaData)}
               </span>
             </div>

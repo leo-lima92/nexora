@@ -36,7 +36,8 @@ describe("nenhuma tag publica sem estar contida na main", () => {
 
   it("a trava aceita EXATAMENTE `identical` e `behind`, e nada mais", () => {
     const t = job(publish, "a-tag-veio-da-main");
-    expect(t).toContain("compare/main...");
+    // Fork Nexora: o ramo padrão é `master`, e a procedência é conferida contra ele.
+    expect(t).toContain("compare/master...");
 
     // Prende o CONJUNTO aceito, não a ausência de uma string. A primeira versão
     // deste caso proibia `/\bahead\|/` — e passou verde quando a sabotagem

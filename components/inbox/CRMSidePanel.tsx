@@ -211,7 +211,7 @@ function MarcarProximoPasso({ demandaId, onPronto }: { demandaId: string; onPron
         placeholder={t("O que acontece a seguir?")}
         aria-label={t("Próximo passo desta demanda")}
         data-testid="campo-proximo-passo"
-        className="w-full rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-hidden focus:ring-1 focus:ring-ring"
+        className="w-full rounded-md border border-border-strong bg-surface px-2.5 py-1.5 text-xs text-text placeholder:text-text-subtle focus:border-text focus:outline-hidden"
       />
       <div className="flex gap-1.5">
         <Button
@@ -274,7 +274,7 @@ function SemLista({
   onTentarDeNovo: () => void;
 }) {
   const t = useT();
-  if (!erro) return <p className="mt-2 text-xs text-muted-foreground">{t(vazio)}</p>;
+  if (!erro) return <p className="mt-2 text-xs text-text-muted">{t(vazio)}</p>;
   return (
     <div className="mt-2 space-y-1">
       <p className="text-xs text-error-fg">{t("Não consegui ler estes dados.")}</p>
@@ -539,27 +539,27 @@ export function CRMSidePanel({ conversation }: Props) {
 
   if (!conversation) {
     return (
-      <aside className="flex h-full items-center justify-center border-l border-border p-4 text-center text-xs text-muted-foreground">
+      <aside className="flex h-full items-center justify-center p-6 text-center text-xs text-text-subtle">
         {t("Selecione uma conversa para ver detalhes do contato.")}
       </aside>
     );
   }
 
   return (
-    <aside className="flex h-full flex-col gap-4 overflow-y-auto border-l border-border bg-background p-4">
+    <aside className="flex h-full flex-col gap-6 overflow-y-auto bg-surface p-5">
       <section>
-        <h3 className="text-xs font-semibold text-text">
+        <h3 className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle">
           {t("Contato")}
         </h3>
-        <Card className="mt-2 space-y-2 p-3 text-sm">
-          <div className="font-medium">{displayName}</div>
+        <Card className="mt-2.5 space-y-2 p-4 text-sm shadow-none">
+          <div className="font-medium tracking-title text-text">{displayName}</div>
           {contact?.phone_number && (
-            <div className="text-xs text-muted-foreground">{phoneForDisplay(contact.phone_number)}</div>
+            <div className="font-mono text-xs tabular-nums text-text-subtle">{phoneForDisplay(contact.phone_number)}</div>
           )}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {tags.map((t) => (
-                <Badge key={t} variant="secondary" className="h-4 px-1.5 text-[10px]">
+                <Badge key={t} variant="outline" className="h-[18px] px-1.5 text-[10px]">
                   {t}
                 </Badge>
               ))}
@@ -629,7 +629,7 @@ export function CRMSidePanel({ conversation }: Props) {
           conversa está atendendo alguém que pediu alguma coisa — a primeira
           pergunta a responder é o que ainda está pendente, não quanto vale. */}
       <section data-testid="inbox-demandas">
-        <h3 className="text-xs font-semibold text-text">
+        <h3 className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle">
           {t("Demandas abertas")}
         </h3>
         {sectionsLoading ? (
@@ -651,7 +651,7 @@ export function CRMSidePanel({ conversation }: Props) {
                     <span className="truncate font-medium">
                       {t(ESTADO_LEGIVEL[d.estado] ?? d.estado)}
                     </span>
-                    <span className="shrink-0 tabular-nums text-muted-foreground">
+                    <span className="shrink-0 font-mono tabular-nums text-text-subtle">
                       {t("há")} {horasDesde(d.aberta_em)}h
                     </span>
                   </div>
@@ -689,16 +689,16 @@ export function CRMSidePanel({ conversation }: Props) {
       <Separator />
 
       <section data-testid="inbox-memoria">
-        <h3 className="text-xs font-semibold">{t("Memória do contato")}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{t("Fatos duráveis registrados nas notas. Pendências pertencem à demanda vigente.")}</p>
+        <h3 className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle">{t("Memória do contato")}</h3>
+        <p className="mt-1 text-xs text-text-subtle">{t("Fatos duráveis registrados nas notas. Pendências pertencem à demanda vigente.")}</p>
         {!sectionsLoading && fatos.map((f) => <details key={f.id} className="mt-2 text-xs"><summary>{f.headline}</summary><p className="mt-1 whitespace-pre-wrap">{f.body}</p></details>)}
-        {!sectionsLoading && fatos.length === 0 && <p className="mt-2 text-xs text-muted-foreground">{t("Nenhum fato durável registrado.")}</p>}
+        {!sectionsLoading && fatos.length === 0 && <p className="mt-2 text-xs text-text-subtle">{t("Nenhum fato durável registrado.")}</p>}
         {!sectionsLoading && historico.length > 0 && <div className="mt-3 text-xs"><h4>{t("Histórico encerrado — sem tarefas pendentes")}</h4>{historico.map((h) => <p key={h.id}>{t(DESFECHO_LEGIVEL[h.desfecho] ?? h.desfecho)}</p>)}</div>}
       </section>
       <Separator />
 
       <section data-testid="inbox-campos-lead">
-        <h3 className="text-xs font-semibold text-text">
+        <h3 className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle">
           {t("Leads recentes")}
         </h3>
         {sectionsLoading ? (
@@ -718,7 +718,7 @@ export function CRMSidePanel({ conversation }: Props) {
       <Separator />
 
       <section>
-        <h3 className="text-xs font-semibold text-text">
+        <h3 className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle">
           {t("Pedidos recentes")}
         </h3>
         {sectionsLoading ? (
@@ -728,14 +728,14 @@ export function CRMSidePanel({ conversation }: Props) {
             {orders.map((o) => (
               <li
                 key={o.id}
-                className="flex items-center justify-between rounded-md border border-border p-2 text-xs"
+                className="flex items-center justify-between rounded-md border border-border p-2.5 text-xs"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-1 truncate font-medium">
                     <Receipt size={11} weight="regular" aria-hidden />
                     {o.external_id ?? o.id.slice(0, 8)}
                   </div>
-                  <div className="text-muted-foreground">
+                  <div className="text-text-subtle">
                     {o.status ?? "—"} · {formatMoney(o.total_cents, o.currency)}
                   </div>
                 </div>
@@ -750,7 +750,7 @@ export function CRMSidePanel({ conversation }: Props) {
       <Separator />
 
       <section>
-        <h3 className="text-xs font-semibold text-text">
+        <h3 className="text-xs font-medium uppercase tracking-eyebrow text-text-subtle">
           {t("Atividade")}
         </h3>
         {sectionsLoading ? (
@@ -758,7 +758,7 @@ export function CRMSidePanel({ conversation }: Props) {
         ) : activities && activities.length > 0 ? (
           <ul className="mt-2 space-y-1.5">
             {activities.map((a) => (
-              <li key={a.id} className="rounded-md border border-border p-2 text-xs">
+              <li key={a.id} className="rounded-md border border-border p-2.5 text-xs">
                 {/* Rótulo do vocabulário único (activity-vocabulary), nunca o
                     tipo cru: a tela e o banco divergiram justamente por manter
                     duas listas. Marcador por ator, forma e não cor (§5). */}
@@ -776,8 +776,8 @@ export function CRMSidePanel({ conversation }: Props) {
                   />
                   {t(activityLabel(a.type))}
                 </div>
-                {a.reason && <div className="mt-0.5 truncate text-muted-foreground">{t(a.reason)}</div>}
-                <div className="text-muted-foreground">
+                {a.reason && <div className="mt-0.5 truncate text-text-subtle">{t(a.reason)}</div>}
+                <div className="text-text-subtle">
                   {a.performed_by_name ?? t(actorLabel(a.actor_kind))} · {shortDate(a.performed_at, localeDaData)}
                 </div>
               </li>

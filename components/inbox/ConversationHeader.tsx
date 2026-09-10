@@ -141,11 +141,11 @@ export function ConversationHeader({ conversation }: Props) {
     // de antes (uma linha), e quando aperta a barra desce para a linha de baixo.
     // Nenhuma ação some — um menu "mais" esconderia o "Lembrar" que a spec
     // `canais-baseline` clica, e, pior, esconderia ação de quem atende.
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface px-5 py-3.5">
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <h2 className="truncate text-sm font-semibold">{displayName}</h2>
-          <Badge variant="outline" className="h-4 px-1.5 text-[10px]">
+          <h2 className="truncate text-base font-medium tracking-title text-text">{displayName}</h2>
+          <Badge variant="outline" className="h-[18px] px-1.5 text-[10px]">
             {t(STATUS_LABEL[status] ?? status)}
           </Badge>
           {/* Ao lado do estado, não escondido num painel: a pergunta "dá para
@@ -165,7 +165,7 @@ export function ConversationHeader({ conversation }: Props) {
           {motivo !== null && (
             <Badge
               variant="outline"
-              className="h-4 px-1.5 text-[10px]"
+              className="h-[18px] px-1.5 text-[10px]"
               data-testid="badge-atendimento-humano"
             >
               {t(ROTULO_DO_MOTIVO[motivo])}
@@ -190,7 +190,7 @@ export function ConversationHeader({ conversation }: Props) {
           )}
         </div>
         {phone && (
-          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+          <p className="mt-1 flex items-center gap-1 font-mono text-xs tabular-nums text-text-subtle">
             <Phone size={11} weight="regular" aria-hidden /> {phone}
           </p>
         )}
@@ -203,7 +203,7 @@ export function ConversationHeader({ conversation }: Props) {
         {isOpen && (
           <Button
             size="sm"
-            variant="default"
+            variant="cta"
             disabled={claim.isPending}
             // O rótulo NÃO muda (é contrato: `inbox-header-nao-trava` e o
             // dicionário de espanhol o citam). O que faltava era a consequência
@@ -218,6 +218,7 @@ export function ConversationHeader({ conversation }: Props) {
             }
           >
             {t("Assumir")}
+            <ArrowRight size={13} weight="bold" aria-hidden />
           </Button>
         )}
         {isMineAssigned && (

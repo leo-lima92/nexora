@@ -221,7 +221,8 @@ describe("precedência POR CAMPO", () => {
 
   it("sem nenhuma camada, tudo é o padrão do produto", () => {
     const marca = resolverMarca([], REGUA);
-    expect(marca.name).toBe("DeskcommCRM");
+    // O padrão do produto neste fork é "Nexora" (`DEFAULT_APP_NAME` em lib/branding.ts).
+    expect(marca.name).toBe("Nexora");
     expect(marca.cor).toBeNull();
     expect(marca.origens).toEqual({ nome: "padrao", logoUrl: "padrao", cor: "padrao" });
     expect(marca.motivos).toEqual([]);

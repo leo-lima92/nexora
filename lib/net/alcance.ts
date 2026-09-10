@@ -122,20 +122,39 @@ export function classificarFalhaDeAlcance(erro: unknown): FalhaDeAlcance {
  * e para este módulo, que é de rede, não precisar conhecer nenhuma delas.
  */
 export function explicarFalhaDeAlcance(falha: FalhaDeAlcance, servico: string): string {
+  const de = contrairDe(servico);
   switch (falha) {
     case "endereco_nao_resolve":
       return `O endereço configurado para ${servico} não existe — nem chegamos a tentar conectar. Isso é configuração, não o serviço: reveja o endereço nas variáveis de ambiente.`;
     case "conexao_recusada":
-      return `O servidor de ${servico} foi encontrado, mas recusou a conexão: nada está atendendo naquela porta. Confirme que o serviço está no ar e que a porta configurada é a dele.`;
+      return `O servidor ${de} foi encontrado, mas recusou a conexão: nada está atendendo naquela porta. Confirme que o serviço está no ar e que a porta configurada é a dele.`;
     case "host_inalcancavel":
-      return `Não há caminho de rede até o servidor de ${servico}. Ele pode estar desligado ou bloqueado por firewall.`;
+      return `Não há caminho de rede até o servidor ${de}. Ele pode estar desligado ou bloqueado por firewall.`;
     case "tempo_esgotado":
-      return `O servidor de ${servico} não respondeu a tempo. Pode estar sobrecarregado, ou o tráfego está sendo bloqueado no meio do caminho.`;
+      return `O servidor ${de} não respondeu a tempo. Pode estar sobrecarregado, ou o tráfego está sendo bloqueado no meio do caminho.`;
     case "tls_recusado":
-      return `O certificado de segurança do endereço de ${servico} foi recusado. Confirme o certificado do domínio configurado.`;
+      return `O certificado de segurança do endereço ${de} foi recusado. Confirme o certificado do domínio configurado.`;
     case "indeterminada":
       return `Não foi possível falar com ${servico}, e a causa não foi identificada.`;
   }
+}
+
+/**
+ * "de" + artigo, contraído como se escreve em português: `de o` → `do`.
+ *
+ * O contrato do parâmetro é receber o serviço COM artigo ("o banco de dados"),
+ * o que faz as frases com preposição saírem "O servidor de o banco de dados".
+ * A mensagem estava correta no diagnóstico e errada no idioma — e quem lê um
+ * erro escrito errado desconfia do erro, não do idioma. Só as frases com "de"
+ * passam por aqui; "para ${servico}" e "com ${servico}" já são a forma certa.
+ */
+function contrairDe(servico: string): string {
+  const m = /^(os|as|o|a)\s+(.*)$/i.exec(servico);
+  const artigo = m?.[1]?.toLowerCase();
+  const resto = m?.[2];
+  if (!artigo || !resto) return `de ${servico}`;
+  const contracao: Record<string, string> = { o: "do", a: "da", os: "dos", as: "das" };
+  return `${contracao[artigo] ?? "de"} ${resto}`;
 }
 
 /**

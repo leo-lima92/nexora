@@ -43,7 +43,7 @@ export function AttachmentPreviewDialog({ file, sending, onCancel, onSend }: Pro
           {isVideo && objectUrl && <video src={objectUrl} controls className="max-h-64 rounded-md" />}
           {!isImage && !isVideo && (
             <div className="flex items-center gap-3 py-4">
-              <FileText size={28} weight="duotone" className="text-primary" aria-hidden />
+              <FileText size={28} weight="duotone" className="text-text-subtle" aria-hidden />
               <div className="text-sm">
                 <p className="font-medium">{file.name}</p>
                 <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>

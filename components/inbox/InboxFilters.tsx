@@ -104,7 +104,7 @@ export function InboxFilters({ value, onChange }: Props) {
   }, [searchInput]);
 
   return (
-    <div className="border-b border-border bg-background">
+    <div className="border-b border-border bg-surface">
       <div className="space-y-2 px-3 pt-3 pb-2">
         <div className="flex items-center gap-2">
           <div className="relative min-w-0 flex-1">
@@ -118,7 +118,7 @@ export function InboxFilters({ value, onChange }: Props) {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder={t("Buscar por nome, telefone ou mensagem…")}
-              className="h-9 rounded-full border-transparent bg-surface-elevated pl-9 text-sm shadow-none focus-visible:border-border focus-visible:bg-background"
+              className="h-9 rounded-md border-border-strong bg-surface pl-9 text-sm shadow-none focus-visible:border-text"
               aria-label={t("Buscar conversas")}
             />
           </div>
@@ -130,11 +130,11 @@ export function InboxFilters({ value, onChange }: Props) {
             aria-pressed={value.onlyUnread}
             onClick={() => onChange({ ...value, onlyUnread: !value.onlyUnread })}
             className={cn(
-              "h-9 shrink-0 rounded-full border px-3 text-xs font-medium transition-colors",
+              "h-9 shrink-0 rounded-md border px-3 text-xs font-medium uppercase tracking-eyebrow transition-colors duration-fast ease-out",
               "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               value.onlyUnread
-                ? "border-accent bg-accent text-accent-foreground"
-                : "border-border bg-transparent text-text-muted hover:bg-surface-elevated",
+                ? "border-text bg-text text-surface"
+                : "border-border-strong bg-transparent text-text-muted hover:bg-surface-elevated hover:text-text",
             )}
           >
             {t("Não lidos")}
@@ -152,8 +152,8 @@ export function InboxFilters({ value, onChange }: Props) {
               >
                 <SelectTrigger
                   className={cn(
-                    "h-8 min-w-0 flex-1 rounded-full border-transparent bg-surface-elevated px-3 text-xs shadow-none",
-                    value.channel_session_id != null && "border-accent bg-accent-soft text-accent",
+                    "h-8 min-w-0 flex-1 rounded-md border-border-strong bg-surface px-3 text-xs shadow-none",
+                    value.channel_session_id != null && "border-text bg-surface-elevated font-medium text-text",
                   )}
                   aria-label={t("Filtrar por número de WhatsApp")}
                 >
@@ -180,8 +180,8 @@ export function InboxFilters({ value, onChange }: Props) {
               >
                 <SelectTrigger
                   className={cn(
-                    "h-8 min-w-0 flex-1 rounded-full border-transparent bg-surface-elevated px-3 text-xs shadow-none",
-                    value.tag != null && "border-accent bg-accent-soft text-accent",
+                    "h-8 min-w-0 flex-1 rounded-md border-border-strong bg-surface px-3 text-xs shadow-none",
+                    value.tag != null && "border-text bg-surface-elevated font-medium text-text",
                   )}
                   aria-label={t("Filtrar por tag")}
                 >
@@ -216,11 +216,11 @@ export function InboxFilters({ value, onChange }: Props) {
               <TabsTrigger
                 key={tab}
                 value={tab}
-                className="-mb-px shrink-0 gap-1 rounded-none border-b-2 border-transparent px-0 pb-2 pt-1 text-xs font-medium text-text-muted data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-text data-[state=active]:shadow-none"
+                className="-mb-px shrink-0 gap-1 rounded-none border-b-2 border-transparent px-0 pb-2 pt-1 text-xs font-medium uppercase tracking-eyebrow text-text-muted data-[state=active]:border-text data-[state=active]:bg-transparent data-[state=active]:text-text data-[state=active]:shadow-none"
               >
                 {t(meta.label)}
                 {typeof count === "number" && count > 0 && (
-                  <span className="text-[11px] tabular-nums text-text-subtle">{count}</span>
+                  <span className="font-mono text-[11px] tabular-nums text-text-subtle">{count}</span>
                 )}
               </TabsTrigger>
             );
