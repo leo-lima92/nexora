@@ -41399,79 +41399,82 @@ notify pgrst, 'reload schema';
 -- que não existe mais — e índices sobre ela.
 do $ponte_companies$
 begin
-  if exists (
+  -- As criações ficam DENTRO do `if` (condição sobre outra coisa que não a
+  -- existência do próprio objeto): é o que `tests/unit/baseline-nao-constroi-o-
+  -- que-derruba.test.ts` reconhece como guarda — a 9004 derruba a policy e o
+  -- trigger daqui, e sem a condição o baseline os recriaria a cada update.
+  if not exists (
     select 1 from information_schema.columns
      where table_schema = 'public' and table_name = 'companies'
        and column_name = 'organization_id'
   ) then
+    create table if not exists public.companies (
+      id                      uuid default gen_random_uuid() not null,
+      org_id                  uuid not null,
+      owner_id                uuid,
+      name                    text not null,
+      domain                  text,
+      website                 text,
+      city                    text,
+      country                 text,
+      industry                text,
+      size_range              text,
+      annual_revenue          numeric,
+      description             text,
+      logo_url                text,
+      cnpj                    text,
+      cnae_code               text,
+      cnae_description        text,
+      google_place_id         text,
+      apify_run_id            text,
+      linkedin_url            text,
+      linkedin_company_id     text,
+      linkedin_employee_count integer,
+      linkedin_followers      integer,
+      linkedin_scraped_at     timestamptz,
+      meta_campaign_id        text,
+      meta_adset_id           text,
+      meta_ad_id              text,
+      traffic_source          text,
+      lead_origin             text,
+      source                  text,
+      status                  text,
+      deal_value              numeric,
+      tags                    text[] default '{}'::text[] not null,
+      enrichment_data         jsonb default '{}'::jsonb not null,
+      enriched_at             timestamptz,
+      embedding               public.vector(1536),
+      is_deleted              boolean default false not null,
+      created_at              timestamptz default now() not null,
+      updated_at              timestamptz default now() not null,
+      constraint companies_pkey primary key (id),
+      constraint companies_org_id_fkey foreign key (org_id)
+        references public.organizations(id) on delete cascade,
+      constraint companies_owner_id_fkey foreign key (owner_id)
+        references auth.users(id) on delete set null
+    );
+
+    comment on table public.companies is
+      'Empresa (conta B2B) no escopo do tenant. Origem: Módulo de Tráfego AIOS (Google Maps/LinkedIn/Meta). Dedup por (org_id, google_place_id).';
+
+    create unique index if not exists companies_org_place_id_uniq
+      on public.companies (org_id, google_place_id) where google_place_id is not null;
+    create index if not exists companies_org_id_idx on public.companies (org_id);
+    create index if not exists companies_org_domain_idx
+      on public.companies (org_id, domain) where domain is not null;
+    create index if not exists companies_tags_gin_idx on public.companies using gin (tags);
+
+    create or replace trigger companies_updated_at
+      before update on public.companies
+      for each row execute function public.fn_set_updated_at();
+
+    drop policy if exists tenant_isolation_companies_all on public.companies;
+    create policy tenant_isolation_companies_all on public.companies
+      using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
+      with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+  else
     raise notice '9001: public.companies já é a canônica (0448 + 9004) — bloco AIOS pulado';
-    return;
   end if;
-
-  create table if not exists public.companies (
-    id                      uuid default gen_random_uuid() not null,
-    org_id                  uuid not null,
-    owner_id                uuid,
-    name                    text not null,
-    domain                  text,
-    website                 text,
-    city                    text,
-    country                 text,
-    industry                text,
-    size_range              text,
-    annual_revenue          numeric,
-    description             text,
-    logo_url                text,
-    cnpj                    text,
-    cnae_code               text,
-    cnae_description        text,
-    google_place_id         text,
-    apify_run_id            text,
-    linkedin_url            text,
-    linkedin_company_id     text,
-    linkedin_employee_count integer,
-    linkedin_followers      integer,
-    linkedin_scraped_at     timestamptz,
-    meta_campaign_id        text,
-    meta_adset_id           text,
-    meta_ad_id              text,
-    traffic_source          text,
-    lead_origin             text,
-    source                  text,
-    status                  text,
-    deal_value              numeric,
-    tags                    text[] default '{}'::text[] not null,
-    enrichment_data         jsonb default '{}'::jsonb not null,
-    enriched_at             timestamptz,
-    embedding               public.vector(1536),
-    is_deleted              boolean default false not null,
-    created_at              timestamptz default now() not null,
-    updated_at              timestamptz default now() not null,
-    constraint companies_pkey primary key (id),
-    constraint companies_org_id_fkey foreign key (org_id)
-      references public.organizations(id) on delete cascade,
-    constraint companies_owner_id_fkey foreign key (owner_id)
-      references auth.users(id) on delete set null
-  );
-
-  comment on table public.companies is
-    'Empresa (conta B2B) no escopo do tenant. Origem: Módulo de Tráfego AIOS (Google Maps/LinkedIn/Meta). Dedup por (org_id, google_place_id).';
-
-  create unique index if not exists companies_org_place_id_uniq
-    on public.companies (org_id, google_place_id) where google_place_id is not null;
-  create index if not exists companies_org_id_idx on public.companies (org_id);
-  create index if not exists companies_org_domain_idx
-    on public.companies (org_id, domain) where domain is not null;
-  create index if not exists companies_tags_gin_idx on public.companies using gin (tags);
-
-  create or replace trigger companies_updated_at
-    before update on public.companies
-    for each row execute function public.fn_set_updated_at();
-
-  drop policy if exists tenant_isolation_companies_all on public.companies;
-  create policy tenant_isolation_companies_all on public.companies
-    using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
-    with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
 end $ponte_companies$;
 
 
@@ -41757,8 +41760,7 @@ begin
   alter table public.contacts
     add constraint contacts_company_id_fkey foreign key (company_id)
     references public.companies(id) on delete set null;
-exception
-  when duplicate_object then null;
+exception when duplicate_object then null;
 end $$;
 
 create index if not exists contacts_company_id_idx

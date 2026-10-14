@@ -278,3 +278,42 @@ npx vitest run tests/unit/tailwind-tokens.test.ts tests/unit/branding-tema-claro
 ```
 
 `--pool=forks --maxWorkers=1` porque o host tem ~450 MB livres; sem isso o worker do vitest nem sobe.
+
+---
+
+## Sincronização com o upstream v1.80.0 (2026-10-14) — branch `feat/sync-deskcomm-v1.80.0`
+
+Decisão do CEO: **Opção 1** (merge da TAG `v1.80.0` + escudo), com filtro de produto. Merge
+`2dadc73b8` sobre `24b14292`. 7.707 commits, 63 releases, 269 migrations novas do upstream.
+
+| Escudo | O que foi feito | Prova |
+|---|---|---|
+| Infra (`.env*`, `.claude/`) | 81 mudanças do upstream descartadas (47 adições, 28 remoções, 6 edições); linhas JEV do `.gitignore` reaplicadas fora do commit | `git diff 24b14292 HEAD -- .claude '.env*'` vazio |
+| Visual | 33 conflitos: cor/tipo/forma do Nexora; comportamento do upstream por baixo (filtro multi-etiqueta, setas de abas, selo de canal, autoria da mensagem, logo escuro, Google login, cabeçalho de etapa preso, total por moeda, alvo 44px, fonte 16px no iPhone) | `tsc` recortado 0 erros (sabotagem pega) · eslint 0 erros |
+| Identidade | `master` no `publish-image.yml`, `IMG_NS=ghcr.io/leo-lima92`, âncora em `tests/unit/_identidade-deste-repo.ts` | — |
+| Produto | espanhol oculto em `IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO` (`lib/i18n/registro.ts`); galeria de follow-up só-clínica oculta (`NICHOS_OFERECIDOS_NA_GALERIA`); módulos de nicho já nascem desligados | gates de idioma/follow-up 130/130 |
+
+**Banco.** Os números 0232–0234 passaram a ser do upstream; as do fork viraram **9001–9003**
+(mesmos timestamps; faixa 9xxx reservada ao fork). O upstream criou na 0448 uma `companies`
+incompatível com a nossa (AIOS) — a **9004** (ts `20260928131500`, logo antes da 0448) converge a
+nossa na dele; a 9001 ganhou guarda de forma. No `baseline.sql` os quatro blocos ficam
+imediatamente antes do bloco da 0448. Prova em PGlite (Postgres WASM — sem Docker por RAM):
+
+```
+install fresco ............ 4900 comandos OK · reaplicação (update) OK
+banco do fork antigo + 2 empresas AIOS → update → update: OK, dados preservados
+  (Padaria Legada: trade_name, google_place_id gp-1, main_cnae_code 1091-1/02, tags {aios})
+sabotagem (blocos do fork no fim, sem 9004): install MORRE em "column google_place_id does not exist"
+```
+
+**Pendências**
+
+1. `pnpm test:db` oficial (Docker pg15) — não rodou: Docker Desktop parado e ~600 MB livres.
+2. Hono do AIOS (`C:\dev\nexora\src`, 4 arquivos) escrever `organization_id`/`trade_name` em `companies`.
+3. `REPO_URL` do kit ainda clona `melgarafael/DeskcommCRM` → `tests/unit/namespace-das-imagens.test.ts` vermelho (decidir qual repositório o instalador clona).
+4. `deals`/`linkedin_threads`/`extraction_runs` (chave `org_id`) ficam fora das travas `support_write_*` do modo suporte do upstream.
+5. Prova pela tela (Playwright) das telas resolvidas — MCP do Playwright não conectou e o host não comporta `next build` + Supabase.
+6. Fontes: o upstream vendorizou as fontes (build não depende do Google); o Nexora mantém Archivo via `next/font/google`.
+
+⚠️ A receita "tsc + `grep -v ^.next/`" acima é um falso verde quando `.next/dev/types/routes.d.ts`
+está velho: erro de sintaxe ali desliga a checagem semântica. Use um tsconfig sem `next-env.d.ts`.

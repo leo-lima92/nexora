@@ -147,8 +147,7 @@ begin
   alter table public.contacts
     add constraint contacts_company_id_fkey foreign key (company_id)
     references public.companies(id) on delete set null;
-exception
-  when duplicate_object then null;
+exception when duplicate_object then null;
 end $$;
 
 create index if not exists contacts_company_id_idx
