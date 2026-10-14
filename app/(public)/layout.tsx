@@ -87,17 +87,23 @@ export default async function PublicLayout({ children }: { children: React.React
                 {/* Logo para o tema escuro (upstream v1.80.0): com `logoDarkUrl`, cada
                     tema mostra o seu arquivo; sem ele, o logo claro vale nos dois. */}
                 {marca.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    data-testid="logo-da-fachada"
-                    src={marca.logoUrl}
-                    alt={marca.nome}
+                  /* Sem logo próprio do escuro, o claro ganha um chip branco no tema
+                     escuro (upstream v1.80.0): logo escuro sobre fundo escuro some. */
+                  <span
                     className={
                       marca.logoDarkUrl
-                        ? "h-7 w-auto max-w-[12rem] object-contain dark:hidden"
-                        : "h-7 w-auto max-w-[12rem] object-contain"
+                        ? "inline-flex rounded-md dark:hidden"
+                        : "inline-flex rounded-md dark:bg-white dark:px-3 dark:py-2 dark:shadow-sm"
                     }
-                  />
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      data-testid="logo-da-fachada"
+                      src={marca.logoUrl}
+                      alt={marca.nome}
+                      className="h-7 w-auto max-w-[12rem] object-contain"
+                    />
+                  </span>
                 ) : (
                   <span className="text-[17px] font-semibold tracking-title text-text dark:hidden">
                     {marca.nome}

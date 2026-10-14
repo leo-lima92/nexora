@@ -80,7 +80,7 @@ O que cada item fechou e a prova, na ordem em que foi feito:
 | 3.2 Pipeline | `publish-image.yml` dispara em `master` (trigger, canal `latest`, trava de procedência `compare/master...`); `IMG_NS="ghcr.io/leo-lima92"` em `_common.sh`; defaults do `docker-compose.prod.yml` e `.env.hostgator.example`; testes `namespace-das-imagens` e `tag-so-nasce-da-main` recalibrados. Nomes de imagem mantidos (`deskcommcrm`, `deskcomm-worker`, `deskcomm-scheduler`) — o workflow publica `ghcr.io/<dono do repo>/<nome>`, então no fork nascem como `ghcr.io/leo-lima92/deskcommcrm` sem mexer na matriz | `vitest` nos 7 testes que leem o workflow: verde |
 | 3.4 Reskin | 19 arquivos de `components/inbox` + `components/kanban` e `ConnectionsClient` mesclados por `git apply --3way` sobre o v1.17.0 (60 hunks em conflito resolvidos com a regra do Passo 2: upstream é a base, só classe muda). `lib/net/alcance.ts`, `lib/nuvemshop/*` e a spec `conexoes-transporte-inalcancavel` portados | `tsc` zerado, `eslint` 0 erros, spec verde |
 | 3.1 Testes de marca | 18 falhas (não 20: `branding-rampa` já passava) recalibradas com número **medido** (script `medir-marca.ts`, 2026-09-10) e anotado ao lado | `branding-*.test.ts`: 92 passed, 1 skipped |
-| 3.5 Tela | ver abaixo | `.superpowers/evidence/passo-3-fusao-v117/` |
+| 3.5 Tela | ver abaixo | capturas locais (ver abaixo) |
 
 ### 3.1 Recalibrar os 20 testes de marca (decisão 1 do CTO) ✅
 
@@ -210,7 +210,7 @@ Medido pelo Playwright em 1280×900, `next dev` na 3000, conta `ceo@nexora.local
 | `/app/connections` | 200 | 0 erros | — |
 | `/app/pipelines/<id>` (board) | 200 | 0 erros | 8 colunas; cabeçalho `uppercase / 0.3px / 12px / #4a5565` (eyebrow); coluna sem moldura (`bg transparent`); estado vazio `dashed 8px uppercase` |
 
-Capturas em `.superpowers/evidence/passo-3-fusao-v117/*.png` (pasta gitignored, fica neste disco).
+Capturas `*.png` do Passo 3 guardadas só no disco do worktree, fora do versionamento (pasta de evidência local da sessão de 2026-09-10); para versioná-las, revise o conteúdo e mova para `evidence/passo-3-fusao-v117/`.
 O shell mostra **"Nexora"** — o `DEFAULT_APP_NAME` do rebrand (`b6093a84`) não tinha vindo no Passo 2 e
 foi portado aqui, com os 5 testes que prendem o nome recalibrados.
 
@@ -218,8 +218,7 @@ Receita usada: `supabase stop --no-backup` → `config.toml major_version = 17` 
 antes do commit) → `supabase start` com `supabase/migrations` escondida → extensões → `baseline.sql`
 com `ON_ERROR_STOP=1` → `docker restart supabase_realtime_deskcomm-crm` → `bootstrap-owner.ts` →
 `next dev -p 3000`. Playwright: `/login`, `/app/inbox`, `/app/kanban`, `/app/connections`, console sem
-erro/hidratação, medidas por `getComputedStyle`. Evidência em
-`.superpowers/evidence/passo-3-fusao-v117/`. Backup do banco local anterior em
+erro/hidratação, medidas por `getComputedStyle`. Evidência nas capturas locais citadas acima. Backup do banco local anterior em
 `scratchpad/nexora-local-antes-v117.dump` (5 usuários, 2 orgs, 0 contatos, 0 mensagens).
 
 ### ⚠️ Incidente desta sessão — bootstrap escreveu no Supabase de PRODUÇÃO
@@ -317,3 +316,29 @@ sabotagem (blocos do fork no fim, sem 9004): install MORRE em "column google_pla
 
 ⚠️ A receita "tsc + `grep -v ^.next/`" acima é um falso verde quando `.next/dev/types/routes.d.ts`
 está velho: erro de sintaxe ali desliga a checagem semântica. Use um tsconfig sem `next-env.d.ts`.
+
+### ⏸️ Sessão pausada pelo CEO (2026-10-14)
+
+Pausada pelo CEO enquanto a suíte unitária completa (`vitest run`, 1 worker) rodava; a suíte foi
+**abortada** (processos encerrados) antes do resumo final — não há número total medido.
+
+- O merge está salvo em commit local: `2dadc73b8` (merge v1.80.0) + `272fea5c7` (gates do baseline).
+  Nada foi enviado (`git push` não rodou).
+- O commit WIP seguinte guarda o que estava em curso: o desenho da marca do upstream (símbolo/
+  logotipo **DeskcommCRM**, que aparecia na barra lateral, no admin, no onboarding, no favicon e no
+  ícone do app quando a marca é a padrão "Nexora") foi trocado pelo símbolo do Nexora
+  (`lib/branding/desenho.ts`, `components/branding/MarcaDoProduto.tsx`, `app/icon.tsx`,
+  `lib/branding/icone-do-app.tsx`); o chip `dark:bg-white` do logo voltou à tela de entrada; o
+  fragmento `.changes` ganhou o bloco `## Requer atenção`. `marca-do-produto.test.tsx` ainda não
+  foi revalidado (a última rodada deu timeout por contenção com a suíte).
+
+**Retomar por aqui:**
+1. Rodar `npx vitest run --pool=forks --maxWorkers=1 tests/unit/marca-do-produto.test.tsx tests/unit/logo-nao-some-no-tema-escuro.test.ts` e a régua `min-w-0` (`tests/unit/inbox-texto-longo-nao-empurra-a-coluna.test.ts` pede `h-full min-h-0 min-w-0 flex-col md:flex` em sequência — reordenar as classes do `InboxLayout`).
+2. Trocar o corte do espanhol para "só interface": a lista oferecida alimenta seletores e
+   `parseAcceptLanguage`, e `IDIOMAS_VISIVEIS` volta ao do upstream — elimina 8 falhas de testes
+   do upstream que dependem de `es` servido a quem o gravou. Reajustar os 3 testes de idioma já
+   adaptados e o texto do fragmento.
+3. Falhas já classificadas como AMBIENTE (Windows/RAM/sem Docker/rede): timeouts de 15 s, barra
+   invertida em caminhos, scripts git/bash, Postgres, Redis, LP. Como ESCUDO (decisão do CEO):
+   skills/`settings.json` de `.claude/`, documentação do `.env.example`, workflows em `master`.
+4. Pendências anteriores desta seção seguem valendo (test:db oficial, Hono do AIOS, `REPO_URL`).

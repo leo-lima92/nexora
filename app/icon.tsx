@@ -95,9 +95,9 @@ export default async function Icon() {
           }}
         >
           <svg viewBox={SIMBOLO.viewBox} width={lado} height={lado}>
-            <g fill={CORES_DA_MARCA.claro.simbolo} transform={SIMBOLO.transform}>
-              <path d={SIMBOLO.d} />
-              <rect {...SIMBOLO.modulo} />
+            <g transform={SIMBOLO.transform}>
+              <path d={SIMBOLO.d} fill={CORES_DA_MARCA.claro.simbolo} />
+              <rect {...SIMBOLO.modulo} fill={CORES_DA_MARCA.claro.modulo} />
             </g>
           </svg>
         </div>

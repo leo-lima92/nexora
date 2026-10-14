@@ -16,7 +16,9 @@ nenhum seletor, não é aceito na gravação e não é servido a visitante. A ga
 follow-up (hoje só de clínica) não aparece; "Novo fluxo" segue como antes. Os módulos de nicho
 do upstream (honorários, financeiro, cobrança, CRM B2B, propostas e outros) chegam desligados.
 
-**Requer ação de quem integra o Módulo de Tráfego AIOS.** A tabela de empresas passa a ser uma
+## Requer atenção
+
+**Quem integra o Módulo de Tráfego AIOS:** a tabela de empresas passa a ser uma
 só, a do chassi: na `companies`, `org_id` vira `organization_id`, `name` vira `trade_name` e
 `cnae_code`/`cnae_description` viram `main_cnae_code`/`main_cnae_description`. A atualização
 converte as linhas existentes sozinha, sem perder dado. Quem escreve direto em `companies` (o

@@ -79,13 +79,17 @@ describe("marcaEhADoProduto", () => {
 describe("o desenho na barra lateral", () => {
   it("aberta e sem marca própria, mostra o logotipo do produto (SVG, não <img>)", () => {
     renderSidebar(PADRAO, false);
+    // FORK NEXORA: o logotipo é o símbolo SVG ao lado do nome em texto (não há
+    // glifos do nome em caminhos). Quem nomeia para o leitor de tela é o
+    // contêiner; o nome visível é aria-hidden — lido UMA vez.
     const logotipo = screen.getByRole("img", { name: DEFAULT_APP_NAME });
-    expect(logotipo.tagName.toLowerCase()).toBe("svg");
+    expect(logotipo.querySelector("svg")).not.toBeNull();
     // O e2e `marca-logo.spec.ts` lê "barra sem <img>" como "sem logo do
     // revendedor"; um <img> do produto aqui faria a spec medir a coisa errada.
     expect(document.querySelector("img")).toBeNull();
-    // Nem o nome em texto: o logotipo já o escreve.
-    expect(screen.queryByText(DEFAULT_APP_NAME)).toBeNull();
+    const nomeVisivel = screen.getByText(DEFAULT_APP_NAME);
+    expect(nomeVisivel.getAttribute("aria-hidden")).toBe("true");
+    expect(logotipo.contains(nomeVisivel)).toBe(true);
   });
 
   it("recolhida, mostra só o símbolo — e não a inicial em texto", () => {
