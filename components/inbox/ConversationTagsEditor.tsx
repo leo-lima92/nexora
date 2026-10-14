@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
 import { useT } from "@/hooks/i18n/useT";
-import { Badge } from "@/components/ui/badge";
+import { ChipDeEtiqueta } from "@/components/tags/ChipDeEtiqueta";
+import { PontoDaEtiqueta } from "@/components/tags/PontoDaEtiqueta";
+import { SeletorDeCorDaEtiqueta } from "@/components/tags/SeletorDeCorDaEtiqueta";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Plus } from "@/lib/ui/icons";
@@ -9,6 +11,7 @@ import {
   useUpdateConversationTags,
   useConversationTagVocabulary,
 } from "@/hooks/inbox/useConversationTags";
+import { useDefinirCorDaEtiqueta } from "@/hooks/tags/useDefinirCorDaEtiqueta";
 
 interface Props {
   conversationId: string;
@@ -20,7 +23,10 @@ interface Props {
 export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
   const t = useT();
   const [draft, setDraft] = useState("");
+  // Issue #2718 — tom escolhido ANTES do "+": a etiqueta nasce colorida.
+  const [cor, setCor] = useState<string | null>(null);
   const mutation = useUpdateConversationTags();
+  const { definirCor } = useDefinirCorDaEtiqueta();
   const { data: vocabulary } = useConversationTagVocabulary(orgId);
 
   // Normalização espelha o Zod do PATCH (trim+lowercase); dedup no set.
@@ -31,8 +37,13 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
   function add(raw: string) {
     const tag = raw.trim().toLowerCase().slice(0, 40);
     if (!tag || tags.includes(tag) || tags.length >= 20) return;
+    const escolhida = cor;
     apply([...tags, tag]);
     setDraft("");
+    setCor(null);
+    // A cor é VOCABULÁRIO, não da linha (#2718): chamada independente do
+    // attach — a SQL faz append do verbete, e falhar aqui não desfaz a tag.
+    if (escolhida) void definirCor(tag, escolhida);
   }
 
   function remove(tag: string) {
@@ -50,8 +61,7 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
       <div className="mt-2 flex flex-wrap gap-1">
         {tags.length > 0 ? (
           tags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="h-5 gap-1 px-1.5 text-[10px]">
-              {tag}
+            <ChipDeEtiqueta key={tag} tag={tag} className="h-5 gap-1 px-1.5 text-[10px]">
               <button
                 type="button"
                 onClick={() => remove(tag)}
@@ -61,7 +71,7 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
               >
                 <X size={10} weight="bold" aria-hidden />
               </button>
-            </Badge>
+            </ChipDeEtiqueta>
           ))
         ) : (
           <span className="text-xs text-muted-foreground">{t("Sem tags.")}</span>
@@ -84,6 +94,12 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
           className="h-7 text-xs"
           aria-label={t("Adicionar tag à conversa")}
         />
+        <SeletorDeCorDaEtiqueta
+          cor={cor}
+          onChange={setCor}
+          tag={draft.trim() || undefined}
+          disabled={mutation.isPending || tags.length >= 20}
+        />
         <Button
           size="sm"
           variant="outline"
@@ -104,8 +120,9 @@ export function ConversationTagsEditor({ conversationId, orgId, tags }: Props) {
               type="button"
               onClick={() => add(tag)}
               disabled={mutation.isPending || tags.length >= 20}
-              className="rounded-md border border-dashed border-border-strong px-2 py-0.5 text-[10px] uppercase tracking-eyebrow text-text-subtle transition-colors duration-fast hover:border-solid hover:text-text disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-md border border-dashed border-border-strong px-2 py-0.5 text-[10px] uppercase tracking-eyebrow text-text-subtle transition-colors duration-fast hover:border-solid hover:text-text disabled:opacity-50"
             >
+              <PontoDaEtiqueta tag={tag} />
               + {tag}
             </button>
           ))}

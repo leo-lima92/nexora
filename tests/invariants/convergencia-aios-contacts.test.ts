@@ -3,9 +3,9 @@ import { describe, expect, it, beforeAll } from "vitest";
 import { columnExists, indexExists, lastLine, sql, tableExists } from "./gov-helpers";
 
 /**
- * 0232/0233 — a convergência AIOS ↔ chassi tem gate.
+ * 9001/9002 — a convergência AIOS ↔ chassi tem gate.
  *
- * As migrations 0232 e 0233 trouxeram CINCO tabelas tenant-aware (`companies`,
+ * As migrations 9001 e 9002 trouxeram CINCO tabelas tenant-aware (`companies`,
  * `deals`, `linkedin_threads`, `extraction_runs`) e fundiram o modelo de
  * `contacts` do módulo de tráfego AIOS dentro da `contacts` CANÔNICA do chassi.
  * Entraram na `main` com o check `invariants` VERDE — e verde apenas porque
@@ -78,7 +78,7 @@ beforeAll(() => {
   sql(`${seed(ORG_A, USER_A, "a")} ${seed(ORG_B, USER_B, "b")}`);
 });
 
-describe("0233 §1 — as peças existem", () => {
+describe("9002 §1 — as peças existem", () => {
   it("extraction_runs foi criada", () => {
     expect(tableExists("extraction_runs")).toBe(true);
   });
@@ -143,7 +143,7 @@ describe("0233 §1 — as peças existem", () => {
   });
 });
 
-describe("0233 §2 — fn_e164_or_null nunca adivinha código de país", () => {
+describe("9002 §2 — fn_e164_or_null nunca adivinha código de país", () => {
   // O bug que esta função existe para impedir: prefixar '+' num número sem
   // código de país produz E.164 de FORMATO VÁLIDO e DESTINO ERRADO. A
   // mensagem sai, entrega, e chega num estranho. Ausência de telefone é
@@ -181,7 +181,7 @@ describe("0233 §2 — fn_e164_or_null nunca adivinha código de país", () => {
   });
 });
 
-describe("0233 §3 — rpc_upsert_lead escreve na contacts CANÔNICA", () => {
+describe("9002 §3 — rpc_upsert_lead escreve na contacts CANÔNICA", () => {
   /**
    * ⚠️ O resultado da RPC precisa ser MATERIALIZADO antes de ser cruzado com
    * `contacts`, e a tabela temporária aqui não é preguiça.
@@ -262,13 +262,13 @@ describe("0233 §3 — rpc_upsert_lead escreve na contacts CANÔNICA", () => {
     expect(stderr).toContain("contacts_email_format");
 
     const orfas = sql(
-      `select count(*) from public.companies where org_id = '${ORG_A}' and name = 'Loja Fantasma';`,
+      `select count(*) from public.companies where organization_id = '${ORG_A}' and trade_name = 'Loja Fantasma';`,
     );
     expect(orfas).toBe("0");
   });
 });
 
-describe("0233 §4 — isolamento entre 2 tenants (a razão de o CI existir)", () => {
+describe("9002 §4 — isolamento entre 2 tenants (a razão de o CI existir)", () => {
   // O tenant B precisa ter linha em TODAS as tabelas que este bloco afirma
   // estarem isoladas. Sem isso, "A vê 0 linhas de B" passa porque não existe
   // linha nenhuma — asserção vazia, que é o modo de falha que este arquivo
@@ -307,7 +307,7 @@ describe("0233 §4 — isolamento entre 2 tenants (a razão de o CI existir)", (
     // vazia. Aqui a conexão é `postgres` (bypassa RLS), então enxerga tudo.
     for (const [tabela, coluna] of [
       ["extraction_runs", "org_id"],
-      ["companies", "org_id"],
+      ["companies", "organization_id"],
       ["contacts", "organization_id"],
       ["deals", "org_id"],
       ["linkedin_threads", "org_id"],
@@ -334,7 +334,7 @@ describe("0233 §4 — isolamento entre 2 tenants (a razão de o CI existir)", (
 
   it("A não vê companies nem contacts do B", () => {
     expect(
-      rowsAs(USER_A, `select count(*) from public.companies where org_id = '${ORG_B}';`),
+      rowsAs(USER_A, `select count(*) from public.companies where organization_id = '${ORG_B}';`),
     ).toBe(0);
     expect(
       rowsAs(USER_A, `select count(*) from public.contacts where organization_id = '${ORG_B}';`),
@@ -361,7 +361,7 @@ describe("0233 §4 — isolamento entre 2 tenants (a razão de o CI existir)", (
   });
 });
 
-describe("0233 §5 — nada novo nasceu exposto ao anon", () => {
+describe("9002 §5 — nada novo nasceu exposto ao anon", () => {
   // O `ALTER DEFAULT PRIVILEGES ... GRANT ALL ON TABLES TO anon` do baseline
   // vale para toda tabela criada DEPOIS dele — isto é, para todo apêndice
   // novo. Sem o `revoke`, a tabela nasce legível pela anon key, que vai para
@@ -377,23 +377,37 @@ describe("0233 §5 — nada novo nasceu exposto ao anon", () => {
     expect(n).toBe("0");
   });
 
-  it.each(novas)("%s tem RLS habilitada e policy de tenant", (tabela) => {
+  // `companies` é a canônica do chassi desde a 9004: a isolação dela é a da
+  // 0448, POR OPERAÇÃO (select membro; insert/delete manager; update agent), e
+  // a policy `for all` da forma AIOS tem de ter SUMIDO — as duas juntas
+  // somariam permissões (policies permissivas são OR). Só as PERMISSIVE entram
+  // na conta: as RESTRICTIVE `support_write_*` (travas do modo suporte do
+  // upstream) se aplicam a toda tabela com `organization_id` e só subtraem.
+  const POLICIES_DE_TENANT: Record<string, string> = {
+    companies: "companies_delete,companies_insert,companies_select,companies_update",
+    deals: "tenant_isolation_deals_all",
+    linkedin_threads: "tenant_isolation_linkedin_threads_all",
+    extraction_runs: "tenant_isolation_extraction_runs_all",
+  };
+
+  it.each(novas)("%s tem RLS habilitada e EXATAMENTE as policies de tenant esperadas", (tabela) => {
     expect(sql(`select relrowsecurity from pg_class where oid = 'public.${tabela}'::regclass;`)).toBe("t");
     expect(
-      sql(`select count(*) from pg_policies
+      sql(`select coalesce(string_agg(policyname, ',' order by policyname), '<nenhuma>')
+             from pg_policies
             where schemaname = 'public' and tablename = '${tabela}'
-              and policyname = 'tenant_isolation_${tabela}_all';`),
-    ).toBe("1");
+              and permissive = 'PERMISSIVE';`),
+    ).toBe(POLICIES_DE_TENANT[tabela]);
   });
 
   // ⚠️ Esta asserção afirma o CONJUNTO EXATO de grantees, e não "anon não está
-  // na lista". A diferença não é estilística — é o defeito que a 0234 conserta.
+  // na lista". A diferença não é estilística — é o defeito que a 9003 conserta.
   //
   // A doutrina do CLAUDE.md §9 nomeia DUAS origens de EXECUTE (o grant direto
   // a `anon` do ALTER DEFAULT PRIVILEGES e o grant a PUBLIC que o Postgres dá
   // na criação). Existem TRÊS: o baseline tem QUATRO linhas irmãs de
   // `ALTER DEFAULT PRIVILEGES ... GRANT ALL ON FUNCTIONS` — postgres, anon,
-  // **authenticated**, service_role. A 0233 revogou `public, anon`, declarou
+  // **authenticated**, service_role. A 9002 revogou `public, anon`, declarou
   // "caller esperado: service_role", e o ACL real do banco era
   // `postgres=X authenticated=X service_role=X`.
   //
@@ -414,7 +428,7 @@ describe("0233 §5 — nada novo nasceu exposto ao anon", () => {
   );
 });
 
-describe("0233 §6 — a chave de tenant de contacts continua ÚNICA", () => {
+describe("9002 §6 — a chave de tenant de contacts continua ÚNICA", () => {
   it("contacts NÃO tem coluna org_id", () => {
     // Ver o cabeçalho deste arquivo. Este é o invariante que protege a decisão
     // central da convergência, e a única forma de falha aqui é alguém
@@ -445,5 +459,57 @@ describe("0233 §6 — a chave de tenant de contacts continua ÚNICA", () => {
       expect(qual).toContain("fn_user_org_ids");
       expect(qual).toContain("org_id");
     }
+  });
+});
+
+describe("9004 — companies converge na canônica do chassi (upstream 0448)", () => {
+  // A 9001 (AIOS) e a 0448 (CRM B2B do upstream) criavam duas `companies` com o
+  // mesmo nome e esquemas incompatíveis. Estes casos provam a forma que ficou.
+  it("a chave de tenant é organization_id, e org_id NÃO existe (nunca as duas)", () => {
+    expect(columnExists("companies", "organization_id")).toBe(true);
+    expect(columnExists("companies", "org_id")).toBe(false);
+  });
+
+  it.each(["trade_name", "legal_name", "normalized_cnpj", "enrichment_status", "created_by"])(
+    "coluna canônica da 0448 presente: %s",
+    (coluna) => expect(columnExists("companies", coluna)).toBe(true),
+  );
+
+  it.each(["owner_id", "domain", "google_place_id", "linkedin_url", "meta_campaign_id", "tags", "embedding"])(
+    "fato AIOS preservado como coluna aditiva: %s",
+    (coluna) => expect(columnExists("companies", coluna)).toBe(true),
+  );
+
+  it.each(["name", "cnae_code", "cnae_description"])(
+    "o nome AIOS antigo saiu (renomeado, sem duplicata): %s",
+    (coluna) => expect(columnExists("companies", coluna)).toBe(false),
+  );
+
+  it("o dedup AIOS continua de pé, agora sobre organization_id", () => {
+    expect(indexExists("companies_org_place_id_uniq")).toBe(true);
+    expect(
+      sql(`select indexdef from pg_indexes where indexname = 'companies_org_place_id_uniq';`),
+    ).toContain("(organization_id, google_place_id)");
+  });
+
+  it("um só trigger de updated_at (o da 0448)", () => {
+    expect(
+      sql(`select coalesce(string_agg(tgname, ',' order by tgname), '<nenhum>')
+             from pg_trigger
+            where tgrelid = 'public.companies'::regclass and not tgisinternal;`),
+    ).toBe("trg_companies_set_updated_at");
+  });
+
+  it("rpc_upsert_lead grava o nome na coluna canônica trade_name", () => {
+    const linha = lastLine(
+      sql(`
+        select c.trade_name || '|' || c.organization_id
+          from public.rpc_upsert_lead(
+            '${ORG_A}', 'Padaria Convergida', 'organic', 'direct',
+            null, null, null, 'Clara', null, null, null) r
+          join public.companies c on c.id = r.company_id;
+      `),
+    );
+    expect(linha).toBe(`Padaria Convergida|${ORG_A}`);
   });
 });

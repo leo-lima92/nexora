@@ -32,7 +32,8 @@ import type { EnrollmentEventRef, EnrollmentRow } from "@/lib/followup/node-hand
  * re-drain; (2) inbound em waiting_reply sem cancel_on_reply acorda (marker +
  * next_eval_at=now) e o PRÓPRIO tick do engine classifica em vez de rotear
  * no_reply (a corrida classify-lento documentada no HANDOFF); (3) inbound com
- * cancel_on_reply=true cancela (replied); (4) handoff aberto aplica a política
+ * cancel_on_reply=true cancela (replied), inclusive quando a inscrição está em
+ * espera fixa active; (4) handoff aberto aplica a política
  * do pointer (pause/cancel/allow); (5) O CENTERPIECE anti-Tomik: pausa por
  * handoff → fecha → retoma pra active com next_eval_at setado, nunca preso.
  */
@@ -248,7 +249,7 @@ async function seedConversation(org: string, contactId: string): Promise<string>
   const { rows: sessRows } = await pool.query<{ id: string }>(
     `insert into channel_sessions (organization_id, waha_session_name, status, webhook_secret_encrypted)
      values ($1, $2, 'WORKING', '\\x00'::bytea) returning id`,
-    [org, `reactivity-session-${Date.now()}-${Math.random()}`],
+    [org, `reactivity-session-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`],
   );
   const sessionId = sessRows[0]!.id;
   const { rows: convRows } = await pool.query<{ id: string }>(
@@ -643,6 +644,34 @@ describe("applyReactivityEvent — inbound wake (waiting_reply, sem cancel_on_re
     const after = await getEnrollment(enrollmentId);
     expect(after.status).toBe("cancelled");
     expect(after.outcome).toBe("replied");
+  });
+
+  // O nome anterior deste caso dizia "espera fixa", e o caminho testado não lê
+  // tipo de nó nenhum: `esperaAtiva` filtra por `status === 'active'`. O rótulo
+  // prometia menos do que o código faz, e quem lesse o teste procuraria uma
+  // condição de nó que não existe. A amplitude é deliberada — a chave na tela
+  // diz "cancelar se o lead responder", sem ressalva de nó —, e o caso irmão
+  // abaixo a prende de propósito.
+  it("cancel_on_reply cancela também a inscrição active, não só a waiting_reply", async () => {
+    const org = nextOrgId();
+    await seedOrg(org);
+    const contactId = await seedContact(org);
+    const { pointerId, versionId } = await seedFlow(org, SIMPLE_GRAPH, {
+      triggerConfig: { kind: "stage_change", params: { stage_id: nextOrgId() }, cancel_on_reply: true },
+    });
+    const enrollmentId = await seedEnrollment({ org, pointerId, versionId, contactId, currentNodeId: "w1", status: "active" });
+
+    const row = eventRow({ organization_id: org, event_type: "message.received", payload: { contact_id: contactId } });
+    const summary = await applyReactivityEvent(reactivityDb(), () => new Date(), row);
+    expect(summary).toEqual({ matched: true, reacted: 1 });
+
+    const after = await getEnrollment(enrollmentId);
+    expect(after.status).toBe("cancelled");
+    expect(after.outcome).toBe("replied");
+    expect(after.next_eval_at).toBeNull();
+
+    const events = await getEvents(enrollmentId);
+    expect(events.map((e) => e.event_type)).toEqual(["reactivity_replied"]);
   });
 
   it("cancel_on_reply ausente (schema antigo) — comportamento inalterado: acorda, não cancela", async () => {

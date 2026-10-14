@@ -10,7 +10,8 @@ const Textarea = React.forwardRef<
     <textarea
       className={cn(
         "flex min-h-[80px] w-full rounded-md border border-border-strong bg-surface px-4 py-3",
-        "text-sm leading-normal text-text placeholder:text-text-subtle",
+        // `text-base md:text-sm` — mesmo motivo de `input.tsx` (zoom do Safari no iPhone).
+        "text-base leading-normal text-text placeholder:text-text-subtle md:text-sm",
         "transition-[border-color] duration-fast ease-out",
         "hover:border-iron",
         "focus-visible:border-text focus-visible:outline-hidden",

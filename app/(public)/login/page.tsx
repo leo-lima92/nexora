@@ -1,9 +1,10 @@
 import Link from "next/link";
 
+import { EntrarComGoogle } from "@/components/auth/EntrarComGoogle";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { branding } from "@/lib/branding";
+import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
-import { normalizarIdioma } from "@/lib/i18n/idiomas";
+import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
 
 export const metadata = { title: "Entrar" };
@@ -22,22 +23,22 @@ export default async function LoginPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const idioma = normalizarIdioma(
+  const idioma = await idiomaDoVisitante(
     (user?.user_metadata?.locale as string | undefined) ?? null,
   );
   const t = (texto: string) => traduzir(texto, idioma);
+  const marca = await marcaDaSaida(null);
 
   return (
     <div className="space-y-6">
       {/* A marca subiu para a casca pública (app/(public)/layout.tsx), acima do
-          cartão. O nome continua aqui, dentro da frase, porque
-          tests/e2e/icone-da-marca.spec.ts cruza este texto (que lê o .env) com o
-          título da aba (que lê o banco) — trocar a fonte deixaria a spec verde
-          medindo nada. */}
+          cartão. O nome continua aqui, dentro da frase, e vem de
+          `marcaDaSaida(null)` — a MESMA pilha (banco acima do .env) do título da
+          aba, como o upstream v1.80.0 passou a fazer. */}
       <div className="space-y-1.5">
         <h1 className="text-2xl font-medium tracking-title text-text">{t("Entrar")}</h1>
         <p className="text-sm text-text-muted">
-          {t("Use o e-mail da sua conta")} {branding().name}.
+          {t("Use o e-mail da sua conta")} {marca.nome}.
         </p>
       </div>
       {reset === "success" && (
@@ -71,16 +72,28 @@ export default async function LoginPage({
           )}
         </div>
       )}
+      {error === "cadastro_por_convite" && (
+        <div
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          {t(
+            "Sua conta foi confirmada, mas esta instalação aceita cadastro apenas por convite — então não criamos uma empresa para você. Peça um convite a quem administra o sistema; o link dele já traz tudo o que falta.",
+          )}
+        </div>
+      )}
       {error === "template_padrao" && (
         <div
           className="rounded-md border border-error bg-error-bg px-3.5 py-2.5 text-sm text-error-fg"
           role="alert"
         >
           {t(
-            "Este link veio do modelo de e-mail padrão do Supabase, que não fecha o acesso nesta instalação — pedir outro link não resolve. Quem administra o sistema precisa configurar os e-mails de acesso (",
+            "Este link veio do modelo de e-mail padrão do Supabase, que não fecha o acesso nesta instalação — pedir outro link não resolve. Quem administra o sistema precisa configurar os modelos de e-mail: na nuvem do Supabase, com ",
           )}
           <code>marca-emails.sh</code>
-          {t(", no kit de instalação).")}
+          {t(
+            "; num Supabase próprio, apontando GOTRUE_MAILER_TEMPLATES_* para as rotas /email-templates/ do app.",
+          )}
         </div>
       )}
       {error === "provisionamento" && (
@@ -93,7 +106,47 @@ export default async function LoginPage({
           )}
         </div>
       )}
+      {/*
+        As duas recusas da entrada com Google, separadas de propósito: uma é
+        falha da volta (o `code` não virou sessão), a outra é desistência de
+        quem estava do outro lado. A mesma mensagem para as duas mandaria a
+        pessoa "tentar de novo" quando ela só fechou a tela — e procurar
+        defeito onde não há.
+      */}
+      {error === "entrada_com_google" && (
+        <div
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          {t(
+            "Não foi possível concluir a entrada com o Google. Tente novamente — se acontecer de novo, entre com e-mail e senha.",
+          )}
+        </div>
+      )}
+      {error === "entrada_com_google_cancelada" && (
+        <div
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          {t("A entrada com o Google foi cancelada antes de terminar. Nada mudou na sua conta.")}
+        </div>
+      )}
+      {/* A terceira recusa da entrada com Google: a conta está confirmada, mas o
+          acesso dela foi retirado. Não é convite inválido (não havia convite
+          nenhum) nem falha do Google — é decisão de quem administra, e a tela
+          diz exatamente isso, em vez de mandar a pessoa "tentar de novo". */}
+      {error === "acesso_revogado" && (
+        <div
+          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          role="alert"
+        >
+          {t(
+            "O acesso desta conta foi retirado por quem administra o sistema — então não criamos uma empresa nova para você. Se o acesso deveria continuar, peça a quem administra para restaurá-lo; se você está entrando em outra equipe, peça um convite.",
+          )}
+        </div>
+      )}
       <LoginForm next={next} />
+      <EntrarComGoogle next={next} />
       {/* Alinhado à ESQUERDA como o título e os campos; separado por hairline
           porque são portas para OUTRAS telas, não parte do formulário. */}
       <div className="space-y-2 border-t border-border pt-5 text-sm">

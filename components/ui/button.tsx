@@ -19,7 +19,10 @@ const buttonVariants = cva(
   [
     "inline-flex items-center justify-center gap-2 whitespace-nowrap",
     "rounded-md font-medium",
-    "transition-[background-color,border-color,color,box-shadow,transform,filter]",
+    // `transform` saiu da lista (upstream v1.80.0): o recuo `active:translate-y-px`
+    // compila para a propriedade individual `translate`, que fica fora de propósito
+    // — o recuo do toque é o único retorno instantâneo da interface.
+    "transition-[background-color,border-color,color,box-shadow]",
     "duration-fast ease-out",
     // Anel de foco na cor do TEXTO, não do accent: foco não é ação (Orderful).
     "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
@@ -95,8 +98,7 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
@@ -104,11 +106,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     );
   },
 );

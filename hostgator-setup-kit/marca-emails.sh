@@ -233,22 +233,62 @@ HTML_CONFIRM="$(renderizar "$PROJ_DIR/supabase/templates/confirmation.html")" ||
 HTML_RECOVERY="$(renderizar "$PROJ_DIR/supabase/templates/recovery.html")" || instrua_e_saia "não achei supabase/templates/ — rode de dentro do repositório."
 
 if [ -n "$RENDER_EM" ]; then
-  # O caminho de quem roda GoTrue self-hosted: lá não existe Management API, e
-  # `GOTRUE_MAILER_TEMPLATES_*` aponta para ARQUIVO. Apontar para o modelo cru
-  # entregaria `__APP_NAME__` ao cliente final.
+  # Renderiza os modelos com a marca do .env e para por aqui.
+  #
+  # ATENCAO -- ISTO NAO E O CAMINHO SELF-HOSTED. `GOTRUE_MAILER_TEMPLATES_*`
+  # NAO aceita caminho de arquivo: o que nao comeca com `http` o GoTrue COLA no
+  # fim do SITE_URL e busca por HTTP (supabase/auth v2.196.0,
+  # internal/mailer/templatemailer/template.go:456). Apontar para um arquivo faz
+  # ele buscar `https://SEU_DOMINIO/caminho/do/arquivo`, receber a tela de login
+  # e mandar ISSO por e-mail -- medido em 2026-09-09, e o Gmail marcou como
+  # phishing.
+  #
+  # Quem roda self-hosted aponta para a ROTA DO APP (ver abaixo). Este ramo
+  # serve para inspecionar o HTML antes, ou para quem prefere servir por conta
+  # propria num caminho HTTP seu.
   mkdir -p "$RENDER_EM" || instrua_e_saia "não consegui escrever em $RENDER_EM"
   printf '%s\n' "$HTML_CONFIRM"  > "$RENDER_EM/confirmation.html"
   printf '%s\n' "$HTML_RECOVERY" > "$RENDER_EM/recovery.html"
   c_grn "✓ modelos renderizados em $RENDER_EM (marca: $APP_NOME, accent: $ACCENT)"
-  c_dim "  GoTrue self-hosted: aponte GOTRUE_MAILER_TEMPLATES_CONFIRMATION/RECOVERY para eles."
+  c_dim "  Isto e so o HTML renderizado -- NAO aponte GOTRUE_MAILER_TEMPLATES_* para estes arquivos."
+  c_dim "  Num Supabase proprio, aponte para a rota do app, que resolve a marca pelo BANCO:"
+  c_dim "    GOTRUE_MAILER_TEMPLATES_CONFIRMATION=${NEXT_PUBLIC_APP_URL:-https://SEU_DOMINIO}/email-templates/confirmation"
+  c_dim "    GOTRUE_MAILER_TEMPLATES_RECOVERY=${NEXT_PUBLIC_APP_URL:-https://SEU_DOMINIO}/email-templates/recovery"
   exit 0
 fi
 
 # ── 3. Dá para subir? ──────────────────────────────────────────────────────
-[ -n "${SUPABASE_ACCESS_TOKEN:-}" ] || instrua_e_saia \
-  "sem SUPABASE_ACCESS_TOKEN — não dá para configurar os e-mails de acesso sozinho.
+# A TOPOLOGIA vem antes do token. O token (`sbp_...`) é da Management API da
+# NUVEM; perguntar por ele primeiro mandava quem tem o Supabase na própria VPS
+# buscar uma chave de outra conta, para um passo que ali não existe (medido
+# numa instalação single-server em 2026-10-07).
+#
+# Single-server: o Supabase é do kit, e o install-single-server.sh / update.sh
+# gravam os moldes direto no GoTrue (gravar_modelos_do_gotrue, _common.sh —
+# #2109). Aqui só conferimos que estão lá.
+if [ "${SINGLE_SERVER:-0}" = "1" ]; then
+  env_sb="$(PROJECT_DIR="$PROJ_DIR" dir_do_supabase)/.env"
+  if [ -n "$(valor_do_env "$env_sb" GOTRUE_MAILER_TEMPLATES_CONFIRMATION)" ] \
+     && [ -n "$(valor_do_env "$env_sb" GOTRUE_MAILER_TEMPLATES_RECOVERY)" ]; then
+    c_grn "✓ Supabase desta VPS: os e-mails de acesso já usam os moldes do app (gravados no GoTrue)."
+  else
+    anota_pendencia "o GoTrue do Supabase desta VPS ainda não aponta para os moldes do app — rode: bash hostgator-setup-kit/update.sh"
+    c_ylw "⚠ o GoTrue do Supabase desta VPS ainda não aponta para os moldes do app."
+    c_dim "  Rode: bash hostgator-setup-kit/update.sh  (ele grava os moldes e reinicia o auth)"
+  fi
+  exit 0
+fi
+# Supabase próprio fora do kit: sem URL da nuvem, o token não serve para nada —
+# o passo abaixo (REF vazio) ensina a env do GoTrue. URL vazia segue pedindo o
+# token: ali não dá para saber a topologia.
+case "${NEXT_PUBLIC_SUPABASE_URL:-}" in
+  https://*.supabase.co*|"")
+    [ -n "${SUPABASE_ACCESS_TOKEN:-}" ] || instrua_e_saia \
+      "sem SUPABASE_ACCESS_TOKEN — não dá para configurar os e-mails de acesso sozinho.
     Pegue um token em https://supabase.com/dashboard/account/tokens, rode
     \`export SUPABASE_ACCESS_TOKEN=sbp_...\` e chame este script de novo."
+    ;;
+esac
 
 # O ref do projeto sai da URL: https://<ref>.supabase.co. Supabase PRÓPRIO
 # (self-hosted) não tem Management API nenhuma — e nesse caso o passo é por env
@@ -259,8 +299,12 @@ case "${NEXT_PUBLIC_SUPABASE_URL:-}" in
 esac
 [ -n "$REF" ] || instrua_e_saia \
   "NEXT_PUBLIC_SUPABASE_URL não é um projeto da nuvem do Supabase (${NEXT_PUBLIC_SUPABASE_URL:-vazio}).
-    Num Supabase próprio, use GOTRUE_MAILER_TEMPLATES_* apontando para os
-    arquivos de \`marca-emails.sh --render-em <dir>\`."
+    Num Supabase próprio não há Management API — o caminho é apontar o GoTrue
+    para a rota do app, que serve o modelo já com a marca do banco:
+      GOTRUE_MAILER_TEMPLATES_CONFIRMATION=${NEXT_PUBLIC_APP_URL:-https://SEU_DOMINIO}/email-templates/confirmation
+      GOTRUE_MAILER_TEMPLATES_RECOVERY=${NEXT_PUBLIC_APP_URL:-https://SEU_DOMINIO}/email-templates/recovery
+    Tem de ser URL http(s): caminho de arquivo o GoTrue cola no fim do SITE_URL
+    e busca, e o cliente recebe a tela de login dentro do e-mail."
 
 api() {  # api <método> <caminho> [corpo]
   local method="$1" path="$2" body="${3:-}"

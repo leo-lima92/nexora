@@ -8,7 +8,11 @@ import { cn } from "@/lib/utils";
 import { toggleSidebar } from "@/app/actions/shell/toggleSidebar";
 import { useAuth } from "@/hooks/auth/AuthProvider";
 import { ConnectionHealthDot } from "@/components/connections/ConnectionHealthDot";
+import { ContadorDeCasos } from "@/components/shell/ContadorDeCasos";
+import { ContadorDaFila } from "@/components/shell/ContadorDaFila";
 import { VersionFooter } from "@/components/shell/VersionFooter";
+import { LogotipoDoProduto, SimboloDoProduto } from "@/components/branding/MarcaDoProduto";
+import { marcaEhADoProduto } from "@/lib/branding";
 import { useMarcaDaInstalacao } from "@/lib/branding/contexto";
 import { GRUPO_NO_RODAPE, sidebarGroups } from "@/lib/navigation/registry";
 
@@ -43,6 +47,8 @@ export function SidebarContent({
     user.is_platform_admin && !user.support,
     activeOrg?.role ?? null,
     activeOrg?.interface_settings,
+    activeOrg?.modulos_ligados ?? [],
+    activeOrg?.capacidades_ligadas ?? [],
   );
   // Configurações sai da área que rola e vai para o rodapé fixo: medido em
   // 1280x768, ele caía fora da dobra mesmo em telas de 1080px.
@@ -109,6 +115,15 @@ export function SidebarContent({
    * descer para ele — que é o contrário do que a precedência por campo promete.
    */
   const logo = activeOrg?.marca?.logoUrl || brand.logoUrl;
+  const logoEscuro =
+    activeOrg?.marca?.logoDarkUrl !== undefined
+      ? activeOrg.marca.logoDarkUrl
+      : activeOrg?.marca?.logoUrl
+        ? null
+        : brand.logoDarkUrl;
+  // Só quando NINGUÉM — nem a instalação, nem a organização — pôs marca própria:
+  // é a condição de `lib/branding.ts`, avaliada sobre o que a barra vai mostrar.
+  const marcaDoProduto = marcaEhADoProduto({ name: nome, logoUrl: logo ?? null });
 
   return (
     <>
@@ -118,18 +133,53 @@ export function SidebarContent({
           collapsed ? "justify-center" : "justify-start",
         )}
       >
-        {logo && !collapsed ? (
-          // <img> em vez de next/image de propósito: a URL vem de quem hospeda
-          // (banco ou .env), e next/image exige allowlist de domínios fechada em
-          // build — a imagem pré-buildada rejeitaria o domínio do self-hoster.
-          // Altura fixa e largura livre porque a arte enviada tem proporção
-          // desconhecida; forçar as duas distorceria o logo de quem configurou.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo} alt={nome} className="h-7 w-auto max-w-[10rem] object-contain" />
+        {(logo || logoEscuro) && !collapsed ? (
+          // Sem arte própria para o escuro, preserva a proteção de contraste.
+          <div
+            className={cn(
+              "rounded-md",
+              !logoEscuro && "dark:bg-white dark:px-2 dark:py-1 dark:shadow-sm",
+            )}
+          >
+            {/* <img> em vez de next/image de propósito: a URL vem de quem hospeda
+              (banco ou .env), e next/image exige allowlist de domínios fechada em
+              build — a imagem pré-buildada rejeitaria o domínio do self-hoster.
+              Altura fixa e largura livre porque a arte enviada tem proporção
+              desconhecida; forçar as duas distorceria o logo de quem configurou. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {logo ? (
+              <img
+                src={logo}
+                alt={nome}
+                className={cn(
+                  "h-7 w-auto max-w-[10rem] object-contain",
+                  logoEscuro && "dark:hidden",
+                )}
+              />
+            ) : (
+              <span className="dark:hidden">{nome}</span>
+            )}
+            {logoEscuro ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoEscuro}
+                alt={nome}
+                className="hidden h-7 w-auto max-w-[10rem] object-contain dark:block"
+              />
+            ) : null}
+          </div>
+        ) : marcaDoProduto ? (
+          // O desenho do produto, inline (ver `components/branding/MarcaDoProduto.tsx`):
+          // logotipo com a barra aberta, só o símbolo com ela recolhida.
+          collapsed ? (
+            <SimboloDoProduto nome={nome} className="h-8 w-8" />
+          ) : (
+            <LogotipoDoProduto nome={nome} className="h-8 w-auto" />
+          )
         ) : (
           <span className={cn("text-[17px] font-semibold tracking-title text-text", collapsed && "sr-only")}>{nome}</span>
         )}
-        {collapsed && (
+        {collapsed && !marcaDoProduto && (
           <span aria-hidden className="text-lg font-semibold tracking-title text-accent">
             {/* Spread e não `[0]`: nome começando com emoji ou acento composto
                 quebraria no meio do code point. Mesma regra de `resolveBranding`
@@ -253,6 +303,8 @@ export function SidebarContent({
                               className={cn(collapsed ? "absolute top-1.5 right-1.5" : "ml-auto")}
                             />
                           )}
+                          {item.contador === "casos" && <ContadorDeCasos compacto={collapsed} />}
+                          {item.contador === "fila" && <ContadorDaFila compacto={collapsed} />}
                         </Link>
                       </li>
                     );
@@ -344,13 +396,24 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
         // que é a assinatura de servidor e navegador terem pintado estados
         // diferentes — e `AppShell` e `Sidebar` são ambos `"use client"`.
         //
-        // `sticky top-0 h-screen` dá o mesmo efeito visual (a barra não rola com
+        // `sticky top-0 h-dvh` dá o mesmo efeito visual (a barra não rola com
         // a página) e ela VOLTA a ocupar lugar: sobra para o conteúdo exatamente
         // o que ela não usou, e não há segunda medida para discordar.
         //
+        // `h-dvh` e não `h-screen`: `100vh` é a janela com a barra de endereço
+        // RECOLHIDA, e o navegador nunca corrige esse valor. No tablet entre 768
+        // e 1023px — onde esta barra JÁ aparece, porque a casca a mostra a partir
+        // de `md` — a barra media mais que a janela e o fim dela ficava fora do
+        // alcance. `dvh` acompanha a barra do navegador aparecendo e sumindo.
+        // Princípio 2 de `docs/design-system/screen-flow/07-responsive-strategy.md`.
+        //
         // `shrink-0` porque item de flex encolhe por padrão, e uma barra de 60
         // espremida para caber é o mesmo defeito por outro caminho.
-        "sticky top-0 z-30 flex h-screen shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-200",
+        //
+        // `duration-base` em vez do `duration-200` literal: 200ms é o mesmo
+        // número, mas vindo de `--duration-base`. A Lei de movimento fecha a
+        // tabela de durações, e número solto é o que a faz apodrecer.
+        "sticky top-0 z-30 flex h-dvh shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-base",
         collapsed ? "w-16" : "w-60",
       )}
     >
