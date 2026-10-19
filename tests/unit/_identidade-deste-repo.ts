@@ -68,6 +68,14 @@ export function donoDo(namespace: string): string {
 export const DONO_DESTE_REPO = donoDo(NAMESPACE_DESTE_REPO);
 
 /**
+ * FORK NEXORA — o NOME do repositório no GitHub (`leo-lima92/nexora`), que o
+ * upstream não precisava declarar porque o dele é `DeskcommCRM`. Só o nome: o dono
+ * continua derivado da âncora, então trocar só este literal deixa a URL do kit
+ * divergente e reprova em `namespace-das-imagens.test.ts`.
+ */
+export const NOME_DESTE_REPO = "nexora";
+
+/**
  * O dono da conta que EXECUTA o workflow, ou `null` fora do GitHub Actions.
  *
  * `GITHUB_REPOSITORY_OWNER` é a única referência que NÃO vem do checkout do PR.
