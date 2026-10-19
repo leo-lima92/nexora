@@ -12,7 +12,9 @@ nome) continua valendo em toda tela que já tinha; telas novas herdam as cores e
 Nexora pelos tokens.
 
 O Nexora opera em português: o espanhol do upstream fica no código, mas não é oferecido em
-nenhum seletor, não é aceito na gravação e não é servido a visitante. A galeria de modelos de
+nenhum seletor e o navegador de quem visita não o escolhe. Quem já tinha gravado espanhol no
+perfil ou na organização continua vendo a tela em espanhol, e o seletor mostra as duas opções
+para que possa voltar ao português. A galeria de modelos de
 follow-up (hoje só de clínica) não aparece; "Novo fluxo" segue como antes. Os módulos de nicho
 do upstream (honorários, financeiro, cobrança, CRM B2B, propostas e outros) chegam desligados.
 
@@ -24,7 +26,13 @@ só, a do chassi: na `companies`, `org_id` vira `organization_id`, `name` vira `
 converte as linhas existentes sozinha, sem perder dado. Quem escreve direto em `companies` (o
 backend Hono do AIOS) precisa usar os nomes novos ANTES de atualizar; a função
 `rpc_upsert_lead` não muda de assinatura e continua funcionando. `deals`, `linkedin_threads` e
-`extraction_runs` não mudam.
+`extraction_runs` não mudam de colunas, mas passam a recusar escrita de quem só pode ler: pela
+API do banco, um usuário `viewer` e o suporte da plataforma em modo só-leitura continuam lendo
+essas tabelas e deixam de gravar nelas. O backend do AIOS grava com a chave de serviço e não é
+afetado.
+
+O instalador passa a baixar o código do próprio repositório do Nexora
+(`github.com/leo-lima92/nexora`) em vez do repositório do DeskcommCRM.
 
 Se você conectou a assinatura do ChatGPT nos agentes, conecte de novo em IA › Credenciais. Se o
 seu WAHA roda em OUTRO servidor entregando na rota global do webhook, aponte-o para a rota por

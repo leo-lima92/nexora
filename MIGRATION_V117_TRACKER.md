@@ -342,3 +342,53 @@ Pausada pelo CEO enquanto a suíte unitária completa (`vitest run`, 1 worker) r
    invertida em caminhos, scripts git/bash, Postgres, Redis, LP. Como ESCUDO (decisão do CEO):
    skills/`settings.json` de `.claude/`, documentação do `.env.example`, workflows em `master`.
 4. Pendências anteriores desta seção seguem valendo (test:db oficial, Hono do AIOS, `REPO_URL`).
+
+### ▶️ Fase 2 retomada e fechada (2026-10-19)
+
+Docker Desktop no ar (VM de 3,7 GB) e ~1,2–1,4 GB livres no host. Um processo pesado por vez.
+
+| Pendência | O que foi feito | Prova |
+|---|---|---|
+| Testes de marca e régua `min-w-0` | `marca-do-produto` e `logo-nao-some-no-tema-escuro` já verdes; classes da coluna da conversa do `InboxLayout` reordenadas (`h-full min-h-0 min-w-0 flex-col md:flex …`) | 21/21 |
+| Espanhol "só interface" | O corte saiu de `IDIOMAS_VISIVEIS` (voltou ao upstream) e mora em `IDIOMAS_OFERECIDOS` (`lib/i18n/registro.ts`): seletores e `Accept-Language` leem a oferta; quem já gravou `es` continua servido em `es`, e o seletor mostra as duas opções para a pessoa poder voltar (`idiomasParaEscolher`) | 20 arquivos de idioma, 164/164; sabotagem do `idiomasParaEscolher` pega |
+| `REPO_URL` do kit | Instalador clona `github.com/leo-lima92/nexora` (público, branch `master`): `install.sh`, `comecar.sh`, `_common.sh`, `diagnostico.sh`, README/CLAUDE do kit, `ubuntu-local-installer.sh` e os labels `image.source` das 4 imagens. Nome do repositório entra na âncora como `NOME_DESTE_REPO`; o dono continua derivado do `IMG_NS` | `namespace-das-imagens*` 17/17 |
+| Hono do AIOS | Worktree próprio `C:\dev\nexora-hono-9004`, branch `feat/hono-companies-canonica` (a partir de `feat/deskcomm-chassis-import`), commit `ba6958291`: mapper do Google Maps, consulta de conversões e os 2 smokes escrevem `organization_id`/`trade_name`; tipos de `companies` na forma convergida. Parâmetro HTTP `org_id`, `rpc_upsert_lead` e `extraction_runs` não mudam | `tsc -p tsconfig.hono.json` 0 erros (antes: 15 erros, todos em `companies`) |
+| `pnpm test:db` oficial | Rodou pela primeira vez (pg15). A 1ª rodada achou **9 casos vermelhos em 4 arquivos, todos do fork**; consertados (abaixo) | ver "Rodada final" |
+
+**O que o `test:db` achou e como fechou**
+
+1. `platform-admin-full-so-escreve` (CONTA GLOBAL) e `rbac-config-ia-canais` (policy ALL só-tenancy): as `tenant_isolation_<t>_all` de `deals`, `linkedin_threads` e `extraction_runs` aceitavam `fn_is_platform_admin()` puro e qualquer membro. **Migration 9005** + apêndice: o par `_read` (pura, SELECT) / `_write` (`_full` ou membro `agent`+), desenho da 0533 do upstream. Era a pendência nº 4 desta seção.
+   - Em SQL **estático**: na primeira versão (`execute format`) a conferência do `update.sh` não via o drop da `_all` e **parava a atualização com o CRM fora do ar** nas três versões do script.
+   - O baseline deixou de criar a `_all` nos blocos 9001/9002 (cerca `baseline-nao-constroi-o-que-derruba`); as migrations da cadeia ficaram intocadas.
+2. `lgpd-redact-unificado-alcanca-pelo-catalogo`: `linkedin_threads` (FK para `contacts`) sem decisão → `manter` (ids, contagem, sentimento; sem texto da pessoa — mesmo precedente do `gclid`).
+3. `convergencia-aios-contacts` (o invariante do próprio fork, escrito contra o PGlite): `bool::text` é `true`/`false` no Postgres, e o caso do `trade_name` caía na armadilha de snapshot que o próprio arquivo documenta. Corrigido, mais 4 casos da 9005 (viewer lê e não escreve; admin escreve) — sabotagem da exigência de papel pega.
+
+**Como rodar o `test:db` neste fork:** o script consulta a "última release publicada" pelo `origin`, e o fork ainda não tem release — sem isso ele reprova antes da suíte. Até haver release própria:
+
+```bash
+CONFERENCIA_KIT_RELEASE=v1.80.0 PATH="$PWD/node_modules/.bin:$PATH" bash scripts/test-db.sh
+```
+
+(`pnpm` não está instalado neste host; o `PATH` acima é exatamente o que o `pnpm test:db` faz.)
+
+**Falhas unitárias preexistentes, provadas no `HEAD` limpo** (worktree de controle, mesmas 6, idênticas): `atualizacao-confere-regras-de-isolamento` (2 timeouts de 15 s), `executor-proprio-so-roda-o-que-e-nosso` (1), `instalador-consentimento-telemetria` (2 — `.env.hostgator.example` sob o escudo do `.env*`), `react-pdf-resolve-sob-tsx` (1). Não são desta sessão.
+
+**Rodada final do `test:db` (estado commitado, `66088ec2f`)**
+
+| Passada | Resultado |
+|---|---|
+| baseline install (`ON_ERROR_STOP=1`) + update (reaplicação, `ON_ERROR_STOP=1`) | ✓ |
+| conferência de isolamento do `update.sh` (checkout, v1.80.0, v1.63.0) | ✓ 172/172 regras nas três |
+| invariantes (438 arquivos, ordem sorteada) | 437/438 · 3.476 casos ✓ · 3 `Test timed out in 30000ms` em `webhooks-inbound.test.ts` com o host a ~770 MB livres; **o arquivo isolado: 38/38 ✓**. Na rodada completa anterior (mesmo schema final, antes da limpeza das `_all` no baseline) foram 438/438 e 3.479 casos ✓ |
+| `test:db:update` (atualização sobre banco com dados) | ✓ |
+
+Unitários dos arquivos tocados: tipos do recorte 0 erros (sabotagem pega); eslint 0 erros; migration/baseline 23 arquivos ✓; kit 54/58 — os 4 vermelhos são as 6 falhas preexistentes acima; idioma, marca, Inbox, namespace e fragmento ✓. Os testes da guarda de release (`guarda-da-release-*`) reprovam aqui por montarem repositórios git via bash no Windows; não leem nada que esta sessão mudou, mas **não** foram medidos no `HEAD` limpo.
+
+**Para a Fase 3**
+
+1. Corte de release/tag própria do fork (`release.yml` olha `main`; o `update.sh` e o `test:db` procuram a "última release" no `origin`, que não tem nenhuma).
+2. Deploy coordenado: a atualização do banco que aplica a 9004/9005 e o Hono de `feat/hono-companies-canonica` vão juntos — o Hono antigo grava `org_id`/`name`, que deixam de existir em `companies`.
+3. Prova pela tela (Playwright) do seletor de idioma e das telas resolvidas — o MCP do Playwright não conectou nesta sessão.
+4. Suíte unitária completa (`vitest run` inteiro) nunca terminou nesta máquina; e as 6 falhas preexistentes.
+5. Limpeza das linhas criadas por engano no Supabase de produção (incidente do Passo 3) — decisão do CEO.
+6. O instalador ainda oferece `es` como idioma da CLI (`_i18n.sh`) — fora do corte "só interface".
