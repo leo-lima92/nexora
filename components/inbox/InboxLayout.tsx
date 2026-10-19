@@ -655,7 +655,7 @@ export function InboxLayout({ initialSelectedId = null, rascunho = null }: Inbox
       */}
       <div
         className={cn(
-          "h-full min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-surface md:flex",
+          "h-full min-h-0 min-w-0 flex-col md:flex overflow-hidden rounded-md border border-border bg-surface",
           colunas.conversa,
         )}
       >
