@@ -317,6 +317,11 @@ const DECISOES: Record<string, Decisao> = {
     decidida: "manter",
     razao: "O PRÓPRIO pedido do titular — justificativa, escopo e desfecho. Guardá-lo é a prova de que o direito foi exercido no prazo (D+7 export, D+15 redact); apagá-lo apagaria a resposta ao titular sobre o próprio pedido.",
   },
+  linkedin_threads: {
+    // Fork Nexora (ponte AIOS, migration 9001) — tabela que o upstream não tem.
+    decidida: "manter",
+    razao: "Fork Nexora: ficha da conversa no LinkedIn (id externo da thread, contagem, data da última mensagem e score/estado de sentimento) — sem texto da conversa nem nome, telefone ou e-mail. O id externo é o mesmo caso do gclid: identificador que só serve para casar a thread ao contato, que já está anonimizado.",
+  },
   llm_calls: {
     decidida: "manter",
     razao: "Ficha de custo e propósito da chamada (provider, modelo, cost_cents) — sem prompt e sem resposta no corpo. É o que a tela de orçamento soma; a entrada de texto pessoal está nas tabelas que a cascata redige.",

@@ -41591,15 +41591,15 @@ alter table public.companies        enable row level security;
 alter table public.deals            enable row level security;
 alter table public.linkedin_threads enable row level security;
 
-drop policy if exists tenant_isolation_deals_all on public.deals;
-create policy tenant_isolation_deals_all on public.deals
-  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
-  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+-- As policies de deals moram no bloco da migration 9005 (fim do arquivo): o par
+-- _read/_write. A _all que a 9001/9002 criava aqui saiu do baseline — criar e
+-- derrubar a mesma regra a cada install/update deixava a antiga valendo entre
+-- os dois pontos (tests/unit/baseline-nao-constroi-o-que-derruba.test.ts).
 
-drop policy if exists tenant_isolation_linkedin_threads_all on public.linkedin_threads;
-create policy tenant_isolation_linkedin_threads_all on public.linkedin_threads
-  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
-  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+-- As policies de linkedin_threads moram no bloco da migration 9005 (fim do arquivo): o par
+-- _read/_write. A _all que a 9001/9002 criava aqui saiu do baseline — criar e
+-- derrubar a mesma regra a cada install/update deixava a antiga valendo entre
+-- os dois pontos (tests/unit/baseline-nao-constroi-o-que-derruba.test.ts).
 
 -- ---------------------------------------------------------------------------
 -- anon fora (precedente 0123/0143: tabela nova nasce concedida)
@@ -41729,10 +41729,10 @@ create index if not exists extraction_runs_active_by_source_idx
 
 alter table public.extraction_runs enable row level security;
 
-drop policy if exists tenant_isolation_extraction_runs_all on public.extraction_runs;
-create policy tenant_isolation_extraction_runs_all on public.extraction_runs
-  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin())
-  with check ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+-- As policies de extraction_runs moram no bloco da migration 9005 (fim do arquivo): o par
+-- _read/_write. A _all que a 9001/9002 criava aqui saiu do baseline — criar e
+-- derrubar a mesma regra a cada install/update deixava a antiga valendo entre
+-- os dois pontos (tests/unit/baseline-nao-constroi-o-que-derruba.test.ts).
 
 revoke all on table public.extraction_runs from anon;
 
@@ -54300,3 +54300,53 @@ end $dias$;
 
 comment on column public.channel_knobs.prospeccao_dias is
   'Dias da semana em que a PROSPECÇÃO pode abordar (0=domingo … 6=sábado). Só a prospecção lê isto; resposta, disparo em massa e retomada seguem allow_sunday. Default = todos os dias (comportamento anterior).';
+
+-- ---- ponte AIOS: support_readonly não escreve em deals/linkedin_threads/extraction_runs (migration 9005) ----
+-- Fork Nexora. As policies _all da 9001/9002 aceitavam fn_is_platform_admin()
+-- (ignora o scope do JWT); viram o par _read (pura) + _write (_full), o desenho
+-- de recurring_entries na 0533. Contexto completo no cabeçalho da migration.
+-- SQL estático, uma tabela por vez, e não um `foreach` com `execute format()`:
+-- a conferência de isolamento do `update.sh` lê os `create/drop policy`
+-- LITERAIS deste arquivo (vale a última operação de cada regra). Escrito em
+-- `format()`, o drop da `_all` ficava invisível para ela, que seguia esperando
+-- a `_all` da 9001 — e PARAVA a atualização com o CRM fora do ar (medido no
+-- `test:db` de 2026-10-19, nas três versões do update.sh).
+
+drop policy if exists tenant_isolation_deals_all on public.deals;
+drop policy if exists tenant_isolation_deals_read on public.deals;
+create policy tenant_isolation_deals_read on public.deals
+  for select
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+drop policy if exists tenant_isolation_deals_write on public.deals;
+create policy tenant_isolation_deals_write on public.deals
+  for all
+  using ((org_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(org_id, 'agent'))
+         or public.fn_is_platform_admin_full())
+  with check ((org_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(org_id, 'agent'))
+              or public.fn_is_platform_admin_full());
+
+drop policy if exists tenant_isolation_linkedin_threads_all on public.linkedin_threads;
+drop policy if exists tenant_isolation_linkedin_threads_read on public.linkedin_threads;
+create policy tenant_isolation_linkedin_threads_read on public.linkedin_threads
+  for select
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+drop policy if exists tenant_isolation_linkedin_threads_write on public.linkedin_threads;
+create policy tenant_isolation_linkedin_threads_write on public.linkedin_threads
+  for all
+  using ((org_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(org_id, 'agent'))
+         or public.fn_is_platform_admin_full())
+  with check ((org_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(org_id, 'agent'))
+              or public.fn_is_platform_admin_full());
+
+drop policy if exists tenant_isolation_extraction_runs_all on public.extraction_runs;
+drop policy if exists tenant_isolation_extraction_runs_read on public.extraction_runs;
+create policy tenant_isolation_extraction_runs_read on public.extraction_runs
+  for select
+  using ((org_id in (select public.fn_user_org_ids())) or public.fn_is_platform_admin());
+drop policy if exists tenant_isolation_extraction_runs_write on public.extraction_runs;
+create policy tenant_isolation_extraction_runs_write on public.extraction_runs
+  for all
+  using ((org_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(org_id, 'agent'))
+         or public.fn_is_platform_admin_full())
+  with check ((org_id in (select public.fn_user_org_ids()) and public.fn_role_at_least(org_id, 'agent'))
+              or public.fn_is_platform_admin_full());

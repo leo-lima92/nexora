@@ -215,8 +215,9 @@ describe("9002 §3 — rpc_upsert_lead escreve na contacts CANÔNICA", () => {
        (c.company_id = l.company_id)::text || '|' ||
        (c.organization_id = '${ORG_A}')::text`,
     );
-    // nome junto | telefone E.164 | elo B2B | tenant correto
-    expect(out).toBe("Jose da Silva|+5511988887777|t|t");
+    // nome junto | telefone E.164 | elo B2B | tenant correto. `bool::text` é
+    // 'true'/'false' no Postgres — 't'/'f' é só como o psql EXIBE um booleano.
+    expect(out).toBe("Jose da Silva|+5511988887777|true|true");
   });
 
   it("telefone nacional vira NULL e sobrevive cru em source_metadata", () => {
@@ -235,7 +236,7 @@ describe("9002 §3 — rpc_upsert_lead escreve na contacts CANÔNICA", () => {
        null, null, null, 'Ana', null, '+5511977776666', null`,
       `(c.source_metadata ? 'phone_raw')::text`,
     );
-    expect(out).toBe("f");
+    expect(out).toBe("false");
   });
 
   it("o lead ENTRA mesmo com telefone impossível de normalizar", () => {
@@ -247,7 +248,7 @@ describe("9002 §3 — rpc_upsert_lead escreve na contacts CANÔNICA", () => {
           '${ORG_A}', 'Sem Telefone Ltda', 'organic', 'direct',
           null, null, null, 'Carlos', null, 'liga pro zap ai', null);
     `);
-    expect(lastLine(out)).toBe("t");
+    expect(lastLine(out)).toBe("true");
   });
 
   it("ATOMICIDADE: falha no insert de contacts não deixa company órfã", () => {
@@ -385,9 +386,10 @@ describe("9002 §5 — nada novo nasceu exposto ao anon", () => {
   // upstream) se aplicam a toda tabela com `organization_id` e só subtraem.
   const POLICIES_DE_TENANT: Record<string, string> = {
     companies: "companies_delete,companies_insert,companies_select,companies_update",
-    deals: "tenant_isolation_deals_all",
-    linkedin_threads: "tenant_isolation_linkedin_threads_all",
-    extraction_runs: "tenant_isolation_extraction_runs_all",
+    // 9005: a _all da ponte virou o par _read (função pura) / _write (_full + papel).
+    deals: "tenant_isolation_deals_read,tenant_isolation_deals_write",
+    linkedin_threads: "tenant_isolation_linkedin_threads_read,tenant_isolation_linkedin_threads_write",
+    extraction_runs: "tenant_isolation_extraction_runs_read,tenant_isolation_extraction_runs_write",
   };
 
   it.each(novas)("%s tem RLS habilitada e EXATAMENTE as policies de tenant esperadas", (tabela) => {
@@ -437,28 +439,43 @@ describe("9002 §6 — a chave de tenant de contacts continua ÚNICA", () => {
     expect(columnExists("contacts", "org_id")).toBe(false);
   });
 
-  it("a policy de contacts filtra por organization_id", () => {
-    const def = sql(`
-      select coalesce(qual, '') from pg_policies
-       where schemaname = 'public' and tablename = 'contacts'
-         and policyname = 'tenant_isolation_contacts_all';
-    `);
-    expect(def).toContain("organization_id");
+  it("as policies de contacts filtram por organization_id", () => {
+    // Desde a 0529/0533 do upstream, `contacts` tem o par _read/_write.
+    for (const policy of ["tenant_isolation_contacts_read", "tenant_isolation_contacts_write"]) {
+      const def = sql(`
+        select coalesce(qual, '') from pg_policies
+         where schemaname = 'public' and tablename = 'contacts' and policyname = '${policy}';
+      `);
+      expect(def, policy).toContain("organization_id");
+    }
   });
 
-  it("companies/deals/extraction_runs usam org_id e a MESMA fn_user_org_ids", () => {
+  it("deals/linkedin_threads/extraction_runs usam org_id e a MESMA fn_user_org_ids", () => {
     // O desvio de nome é consciente (o módulo Hono inteiro fala `org_id`), mas
     // o mecanismo de isolamento tem que ser o mesmo helper — senão são duas
-    // definições de "meus tenants" que podem divergir.
-    for (const tabela of ["companies", "deals", "linkedin_threads", "extraction_runs"]) {
-      const qual = sql(`
-        select coalesce(qual, '') from pg_policies
-         where schemaname = 'public' and tablename = '${tabela}'
-           and policyname = 'tenant_isolation_${tabela}_all';
-      `);
-      expect(qual).toContain("fn_user_org_ids");
-      expect(qual).toContain("org_id");
+    // definições de "meus tenants" que podem divergir. Desde a 9005 cada uma tem
+    // o par _read/_write (o `_all` sumiu); `companies` saiu desta lista na 9004.
+    for (const tabela of ["deals", "linkedin_threads", "extraction_runs"]) {
+      for (const sufixo of ["read", "write"]) {
+        const qual = sql(`
+          select coalesce(qual, '') from pg_policies
+           where schemaname = 'public' and tablename = '${tabela}'
+             and policyname = 'tenant_isolation_${tabela}_${sufixo}';
+        `);
+        expect(qual, `${tabela}_${sufixo}`).toContain("fn_user_org_ids");
+        expect(qual, `${tabela}_${sufixo}`).toContain("org_id");
+      }
     }
+  });
+
+  it("companies (canônica desde a 9004) isola pela MESMA fn_user_org_ids, sobre organization_id", () => {
+    const quals = sql(`
+      select coalesce(string_agg(coalesce(qual, '') || coalesce(with_check, ''), ' '), '')
+        from pg_policies where schemaname = 'public' and tablename = 'companies';
+    `);
+    expect(quals).toContain("fn_user_org_ids");
+    expect(quals).toContain("organization_id");
+    expect(quals).not.toMatch(/\borg_id\b/);
   });
 });
 
@@ -503,13 +520,64 @@ describe("9004 — companies converge na canônica do chassi (upstream 0448)", (
   it("rpc_upsert_lead grava o nome na coluna canônica trade_name", () => {
     const linha = lastLine(
       sql(`
+        create temp table _empresa as select * from public.rpc_upsert_lead(
+          '${ORG_A}', 'Padaria Convergida', 'organic', 'direct',
+          null, null, null, 'Clara', null, null, null);
         select c.trade_name || '|' || c.organization_id
-          from public.rpc_upsert_lead(
-            '${ORG_A}', 'Padaria Convergida', 'organic', 'direct',
-            null, null, null, 'Clara', null, null, null) r
-          join public.companies c on c.id = r.company_id;
+          from _empresa r join public.companies c on c.id = r.company_id;
       `),
     );
     expect(linha).toBe(`Padaria Convergida|${ORG_A}`);
+  });
+});
+
+describe("9005 — a ponte AIOS não aceita escrita de quem só pode ler", () => {
+  const VIEWER_A = "dddddddd-1111-4000-8000-0000000000a9";
+
+  beforeAll(() => {
+    sql(`
+      insert into auth.users (id, email) values ('${VIEWER_A}', 'conv-viewer@invariant.test')
+        on conflict (id) do nothing;
+      insert into public.user_organizations (user_id, organization_id, role)
+        values ('${VIEWER_A}', '${ORG_A}', 'viewer')
+        on conflict do nothing;
+    `);
+  });
+
+  it("viewer da própria organização NÃO escreve extraction_run", () => {
+    const stderr = expectSqlToFail(`
+      set role authenticated;
+      select set_config('request.jwt.claims', '{"sub":"${VIEWER_A}"}', false);
+      insert into public.extraction_runs (org_id, source, status)
+        values ('${ORG_A}', 'manual', 'pending');
+    `);
+    expect(stderr).toContain("row-level security");
+  });
+
+  it("CONTROLE: o admin da mesma organização escreve (a policy não fechou a porta inteira)", () => {
+    const out = sql(`
+      set role authenticated;
+      select set_config('request.jwt.claims', '{"sub":"${USER_A}"}', false);
+      with nova as (
+        insert into public.extraction_runs (org_id, source, status)
+          values ('${ORG_A}', 'manual', 'pending') returning 1
+      ) select count(*) from nova;
+    `);
+    expect(lastLine(out)).toBe("1");
+  });
+
+  it("viewer da própria organização segue LENDO (a linha que o admin acabou de escrever)", () => {
+    expect(rowsAs(VIEWER_A, `select count(*) from public.extraction_runs where org_id = '${ORG_A}';`)).toBeGreaterThan(0);
+  });
+
+  it("nenhuma das três ainda tem a policy _all com a função pura", () => {
+    expect(
+      sql(`
+        select count(*) from pg_policies
+         where schemaname = 'public'
+           and tablename in ('deals', 'linkedin_threads', 'extraction_runs')
+           and (policyname like '%\\_all' or (cmd <> 'SELECT' and (coalesce(qual, '') || coalesce(with_check, '')) like '%fn_is_platform_admin()%'));
+      `).trim(),
+    ).toBe("0");
   });
 });
