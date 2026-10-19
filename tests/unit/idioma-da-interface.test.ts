@@ -26,10 +26,11 @@ import { NAV_DESTINATIONS, NAV_GROUPS } from "@/lib/navigation/registry";
 import { DICIONARIO } from "@/lib/i18n/dicionario";
 import { IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO } from "@/lib/i18n/registro";
 
-// FORK NEXORA: o espanhol está no código mas não é OFERECIDO nesta distribuição
-// (`IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO`, lib/i18n/registro.ts). Os casos que
-// afirmavam "es é servido" passam a afirmar o contrato do fork — e voltam ao do
-// upstream sozinhos se o espanhol for reoferecido.
+// FORK NEXORA: o espanhol está no código e é SERVIDO a quem já o gravou, mas não
+// é OFERECIDO nesta distribuição (`IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO`,
+// lib/i18n/registro.ts) — o navegador de quem visita não o escolhe. Os casos de
+// Accept-Language afirmam o contrato do fork e voltam ao do upstream sozinhos se
+// o espanhol for reoferecido.
 const ES_SERVIDO = IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO.includes("es");
 
 describe("traduzir", () => {
@@ -62,7 +63,8 @@ describe("traduzir", () => {
 
 describe("normalizar o idioma que veio do perfil", () => {
   it("aceita os que sabemos servir", () => {
-    expect(normalizarIdioma("es")).toBe(ES_SERVIDO ? "es" : IDIOMA_PADRAO);
+    // Servir não é oferecer: quem já gravou `es` continua em `es` no fork.
+    expect(normalizarIdioma("es")).toBe("es");
     expect(normalizarIdioma("pt-BR")).toBe("pt-BR");
   });
 
@@ -187,7 +189,10 @@ describe("os elos que somem sem barulho", () => {
       expect(fonte, `${arquivo} voltou a listar idioma à mão`).not.toMatch(
         /<SelectItem\s+value="(pt-BR|es|en-US|zh-CN)"/,
       );
-      expect(fonte, `${arquivo} deixou de ler a lista do registro`).toMatch(/IDIOMAS_VISIVEIS\.map/);
+      // Fork Nexora: a lista do registro chega pelo filtro de oferta (`idiomasParaEscolher`).
+      expect(fonte, `${arquivo} deixou de ler a lista do registro`).toMatch(
+        /idiomasParaEscolher\([^)]*\)\.map/,
+      );
     }
   });
 

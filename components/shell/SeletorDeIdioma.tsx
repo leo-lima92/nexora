@@ -13,7 +13,7 @@ import {
 import { useT } from "@/hooks/i18n/useT";
 import { useAplicarIdioma, useIdioma } from "@/lib/i18n/IdiomaProvider";
 import { type Idioma } from "@/lib/i18n/idiomas";
-import { IDIOMAS_VISIVEIS, idiomaVisivelPorCodigo } from "@/lib/i18n/registro";
+import { idiomaVisivelPorCodigo, idiomasParaEscolher } from "@/lib/i18n/registro";
 import { Check } from "@/lib/ui/icons";
 
 /**
@@ -39,6 +39,7 @@ export function SeletorDeIdioma() {
   const t = useT();
   const idioma = useIdioma();
   const emVigor = idiomaVisivelPorCodigo(idioma);
+  const opcoes = idiomasParaEscolher(idioma);
   const aplicar = useAplicarIdioma();
   const [salvando, startTransition] = useTransition();
 
@@ -81,8 +82,9 @@ export function SeletorDeIdioma() {
 
   // Fork Nexora: com um idioma só oferecido (ver
   // `IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO`), o seletor seria um controle que não
-  // muda nada — some em vez de ficar na tela.
-  if (IDIOMAS_VISIVEIS.length < 2) return null;
+  // muda nada — some em vez de ficar na tela. Quem já está num idioma não
+  // oferecido (gravado antes) vê os dois, e assim tem por onde voltar.
+  if (opcoes.length < 2) return null;
 
   return (
     <DropdownMenu>
@@ -100,7 +102,7 @@ export function SeletorDeIdioma() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[180px]">
-        {IDIOMAS_VISIVEIS.map(({ codigo, nomeNativo }) => (
+        {opcoes.map(({ codigo, nomeNativo }) => (
           <DropdownMenuItem
             key={codigo}
             onClick={() => escolher(codigo)}

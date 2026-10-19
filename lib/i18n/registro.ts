@@ -113,25 +113,38 @@ function ehVisivel(idioma: IdiomaDoRegistro): idioma is IdiomaVisivel {
   return nivelApareceParaQuemUsa(idioma.nivel);
 }
 
+/** Os idiomas que aparecem, na ordem do registro — o padrão do produto primeiro. */
+export const IDIOMAS_VISIVEIS: readonly IdiomaVisivel[] = REGISTRO_DE_IDIOMAS.filter(ehVisivel);
+
 /**
- * FORK NEXORA — os idiomas que ESTA distribuição oferece. Decisão do CEO na
- * sincronização com o upstream v1.80.0 (2026-10-14): o Nexora opera em pt-BR.
+ * FORK NEXORA — os idiomas que ESTA distribuição OFERECE na interface. Decisão do
+ * CEO na sincronização com o upstream v1.80.0 (2026-10-14): o Nexora opera em pt-BR.
  *
- * O espanhol continua no código com o nível `completo` (catálogo, tipo `Idioma`,
- * gates de tradução) para que o próximo merge do upstream siga barato — rebaixar
- * o NÍVEL mudaria o tipo e quebraria dezenas de comparações com `"es"`. O corte é
- * aqui, no ponto de saída: fora desta lista o idioma não é oferecido em seletor
- * nenhum, não é aceito na gravação (`IDIOMAS` deriva daqui) e não é servido a
- * visitante (`parseAcceptLanguage` também lê esta lista) — quem chega com
- * navegador em espanhol, ou organização gravada com `es` pelo instalador, vê
- * pt-BR. Reativar um idioma é acrescentar o código aqui.
+ * O corte é só de OFERTA: fora desta lista o idioma não aparece em seletor nenhum
+ * e não é escolhido pelo navegador de quem visita (`parseAcceptLanguage` lê
+ * `IDIOMAS_OFERECIDOS`) — quem chega com navegador em espanhol vê pt-BR. O resto
+ * fica como no upstream: `IDIOMAS_VISIVEIS` (e `IDIOMAS`, que valida a gravação)
+ * seguem com o espanhol, então organização ou pessoa que JÁ gravou `es` continua
+ * servida em `es`, e o próximo merge do upstream segue barato. Reativar um idioma
+ * na interface é acrescentar o código aqui.
  */
 export const IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO: readonly string[] = ["pt-BR"];
 
-/** Os idiomas que aparecem, na ordem do registro — o padrão do produto primeiro. */
-export const IDIOMAS_VISIVEIS: readonly IdiomaVisivel[] = REGISTRO_DE_IDIOMAS.filter(ehVisivel).filter(
-  (idioma) => IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO.includes(idioma.codigo),
+/** Os idiomas visíveis que esta distribuição oferece, na ordem do registro. */
+export const IDIOMAS_OFERECIDOS: readonly IdiomaVisivel[] = IDIOMAS_VISIVEIS.filter((idioma) =>
+  IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO.includes(idioma.codigo),
 );
+
+/**
+ * As opções de um seletor de idioma: as oferecidas e, se o valor gravado for um
+ * idioma visível que esta distribuição não oferece, também ele — senão o seletor
+ * mostraria vazio para quem já está em `es`.
+ */
+export function idiomasParaEscolher(atual?: string | null): readonly IdiomaVisivel[] {
+  return IDIOMAS_VISIVEIS.filter(
+    (idioma) => IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO.includes(idioma.codigo) || idioma.codigo === atual,
+  );
+}
 
 /** Os que ainda não aparecem: citados na mensagem dos gates, para quem contribui saber que não precisa deles. */
 export const IDIOMAS_EM_CONSTRUCAO: readonly IdiomaDoRegistro[] = REGISTRO_DE_IDIOMAS.filter(

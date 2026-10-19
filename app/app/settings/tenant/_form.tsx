@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { updateTenant } from "@/app/actions/settings/updateTenant";
 import { useT } from "@/hooks/i18n/useT";
-import { IDIOMAS_VISIVEIS } from "@/lib/i18n/registro";
+import { idiomasParaEscolher } from "@/lib/i18n/registro";
 import { MOEDAS_SERVIDAS, simboloDaMoeda, type MoedaServida } from "@/lib/money";
 import { paisesOferecidos, perfilDoPais } from "@/lib/legal/perfil-do-pais";
 import { tenantSchema, type Locale, type TenantInput } from "@/lib/schemas/settings";
@@ -132,7 +132,7 @@ export function TenantForm({ initial, onSave, onSaved }: Props) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {IDIOMAS_VISIVEIS.map(({ codigo, nomeNativo }) => (
+                {idiomasParaEscolher(form.locale).map(({ codigo, nomeNativo }) => (
                   <SelectItem key={codigo} value={codigo}>
                     {nomeNativo}
                   </SelectItem>

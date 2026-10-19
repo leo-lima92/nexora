@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { updateProfile } from "@/app/actions/settings/updateProfile";
 import { useT } from "@/hooks/i18n/useT";
-import { IDIOMAS_VISIVEIS } from "@/lib/i18n/registro";
+import { idiomasParaEscolher } from "@/lib/i18n/registro";
 import {
   profileSchema,
   SEM_PREFERENCIA_DE_IDIOMA,
@@ -101,7 +101,7 @@ export function ProfileForm({
                     aparecer. Oferecer um idioma que não muda a tela é prometer
                     o que ela não cumpre — `en-US` saiu por isso, e um idioma
                     em construção fica fora pela mesma razão. */}
-                {IDIOMAS_VISIVEIS.map(({ codigo, nomeNativo }) => (
+                {idiomasParaEscolher(locale).map(({ codigo, nomeNativo }) => (
                   <SelectItem key={codigo} value={codigo}>
                     {nomeNativo}
                   </SelectItem>

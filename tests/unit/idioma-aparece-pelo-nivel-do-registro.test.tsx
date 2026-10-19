@@ -9,6 +9,7 @@ import {
   IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO,
   REGISTRO_DE_IDIOMAS,
   type IdiomaRegistrado,
+  type IdiomaVisivel,
   type NivelDeIdioma,
 } from "@/lib/i18n/registro";
 
@@ -43,16 +44,18 @@ vi.mock("@/app/actions/settings/updateTenant", () => ({
  * deixaria implementação e teste errados juntos — e verdes.
  */
 const NIVEIS_QUE_APARECEM: ReadonlySet<NivelDeIdioma> = new Set(["telas_principais", "completo"]);
+const aparece = (idioma: IdiomaRegistrado) => NIVEIS_QUE_APARECEM.has(idioma.nivel);
+const VISIVEIS = REGISTRO_DE_IDIOMAS.filter(aparece);
 /**
- * FORK NEXORA — e, além do nível, o idioma tem de ser OFERECIDO nesta
- * distribuição (só pt-BR; decisão do CEO na sincronização v1.80.0). Também
- * escrito aqui, à mão, pelo mesmo motivo do oráculo acima; o caso "a lista do
- * fork é a do registro" abaixo cobra que os dois andem juntos.
+ * FORK NEXORA — o corte do espanhol é só de OFERTA (decisão do CEO na
+ * sincronização v1.80.0): o idioma visível pelo nível continua SERVIDO a quem já
+ * o gravou, mas só o que esta distribuição oferece entra em seletor e é escolhido
+ * pelo navegador. Também escrito aqui, à mão, pelo mesmo motivo do oráculo acima;
+ * o caso "a lista do fork é a do registro" abaixo cobra que os dois andem juntos.
  */
 const OFERECIDOS_NO_FORK: ReadonlySet<string> = new Set(["pt-BR"]);
-const aparece = (idioma: IdiomaRegistrado) =>
-  NIVEIS_QUE_APARECEM.has(idioma.nivel) && OFERECIDOS_NO_FORK.has(idioma.codigo);
-const VISIVEIS = REGISTRO_DE_IDIOMAS.filter(aparece);
+const oferecido = (idioma: IdiomaRegistrado) => aparece(idioma) && OFERECIDOS_NO_FORK.has(idioma.codigo);
+const OFERECIDOS = REGISTRO_DE_IDIOMAS.filter(oferecido);
 
 describe("o registro de idiomas", () => {
   it("não repete código, tag nem subtag do navegador", () => {
@@ -117,7 +120,7 @@ describe("em construção não chega a ninguém", () => {
     // sairia misturado, com o que falta em português.
     for (const idioma of REGISTRO_DE_IDIOMAS) {
       for (const subtag of idioma.subtagsDoNavegador) {
-        const esperado = aparece(idioma) ? idioma.codigo : null;
+        const esperado = oferecido(idioma) ? idioma.codigo : null;
         expect(parseAcceptLanguage(`${subtag}-XX,${subtag};q=0.9`), subtag).toBe(esperado);
       }
     }
@@ -139,9 +142,9 @@ describe("as telas de Configurações oferecem o que o registro deixa aparecer",
       .map((opcao) => ({ valor: opcao.value, rotulo: opcao.textContent ?? "" }));
   }
 
-  const esperadas = VISIVEIS.map((idioma) => ({ valor: idioma.codigo, rotulo: idioma.nomeNativo }));
+  const esperadas = OFERECIDOS.map((idioma) => ({ valor: idioma.codigo, rotulo: idioma.nomeNativo }));
 
-  it("perfil: 'seguir a empresa' mais os idiomas visíveis, e nada além", () => {
+  it("perfil: 'seguir a empresa' mais os idiomas oferecidos, e nada além", () => {
     render(
       <IdiomaProvider locale="pt-BR">
         <ProfileForm
@@ -156,7 +159,7 @@ describe("as telas de Configurações oferecem o que o registro deixa aparecer",
     expect(opcoesDoIdioma().filter((opcao) => opcao.valor !== "auto")).toEqual(esperadas);
   });
 
-  it("organização: os idiomas visíveis, e nada além", () => {
+  it("organização: os idiomas oferecidos, e nada além", () => {
     render(
       <IdiomaProvider locale="pt-BR">
         <TenantForm
@@ -176,5 +179,30 @@ describe("as telas de Configurações oferecem o que o registro deixa aparecer",
       </IdiomaProvider>,
     );
     expect(opcoesDoIdioma()).toEqual(esperadas);
+  });
+
+  it("fork Nexora: quem já gravou um idioma visível não oferecido o vê no seletor", () => {
+    // Sem isto o Select mostraria vazio para a pessoa já em `es` — e ela não
+    // teria como ler o que está escolhido nem voltar ao português pela lista.
+    const naoOferecido = VISIVEIS.find((idioma) => !oferecido(idioma));
+    if (!naoOferecido) return;
+    render(
+      <IdiomaProvider locale="pt-BR">
+        <ProfileForm
+          email="dona@empresa.com"
+          initialFullName="Dona da Empresa"
+          initialAvatarUrl={null}
+          // `aparece` garante que o código é visível; o oráculo é escrito à mão,
+          // então o tipo não acompanha sozinho.
+          initialLocale={naoOferecido.codigo as IdiomaVisivel["codigo"]}
+          initialTimezone="America/Sao_Paulo"
+        />
+      </IdiomaProvider>,
+    );
+    expect(opcoesDoIdioma().filter((opcao) => opcao.valor !== "auto")).toEqual(
+      VISIVEIS.filter((idioma) => oferecido(idioma) || idioma.codigo === naoOferecido.codigo).map(
+        (idioma) => ({ valor: idioma.codigo, rotulo: idioma.nomeNativo }),
+      ),
+    );
   });
 });
