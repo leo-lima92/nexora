@@ -392,3 +392,38 @@ Unitários dos arquivos tocados: tipos do recorte 0 erros (sabotagem pega); esli
 4. Suíte unitária completa (`vitest run` inteiro) nunca terminou nesta máquina; e as 6 falhas preexistentes.
 5. Limpeza das linhas criadas por engano no Supabase de produção (incidente do Passo 3) — decisão do CEO.
 6. O instalador ainda oferece `es` como idioma da CLI (`_i18n.sh`) — fora do corte "só interface".
+
+---
+
+## Sincronização com o upstream v1.94.0 (2026-10-28) — mesma branch
+
+Merge da TAG `v1.94.0` (`ba24d4d36`, 27/10) sobre `0193d377c`: 3.335 commits, 14 releases
+(1.81–1.94), 94 migrations novas, 3.118 arquivos. Mesma receita da v1.80.0. 38 conflitos.
+
+| Regra | O que foi feito |
+|---|---|
+| Escudo `.claude/` e `.env*` | 15 adições e 10 edições do upstream em `.claude/skills/` descartadas (as 10 eram arquivos que o Nexora já tinha apagado); `.env.example`/`.env.hostgator.example` do HEAD. Variáveis novas do upstream NÃO documentadas aqui: `IP_DO_CLIENTE_HEADER`, `PROSPECTING_LOCAL_HTTP_URL` (`.env.example`); `CLOUDFLARE_TUNNEL_TOKEN`, `SHUTDOWN_GRACE_MS`, `WORKER_STOP_GRACE_PERIOD` (`.env.hostgator.example`); `CODEX_CLIENT_VERSION` saiu. Linhas JEV do `.gitignore` reaplicadas fora do commit |
+| Visual (25 arquivos) | Cor/tipo/forma do Nexora; comportamento do upstream por baixo: alvos de toque 44px (`pointer-coarse:min-h-11`, `size="icon"`), fonte 16px no iPhone (Composer, busca, nota do CRM), faixas do topo (`--faixas-de-cima`) em AppShell/TopBar/Sidebar/Inbox, seleção em lote na lista de conversas (wrapper + botão), painel do contato recolhível (#3004), selo "Fornecedor", tarefas no card do Kanban, mensagem apagada em neutro, convite que atravessa login/cadastro, aviso "sem resposta" no login. O botão Recolher da Sidebar mudou de lugar (alto) e foi pintado no Nexora. `StageColumn`: cabeçalho do Nexora (sem cartão), a correção de borda #3030 não se aplica |
+| Banco | `baseline.sql`: bloco 9005 do fork + 17 blocos novos do upstream, só acréscimo (vs. v1.94.0: +979, −0). **O upstream passou a usar a faixa 9xxx** (9016, 9017, 9020, 9021 na tag; 9024, 9025 na `main`): sem colisão hoje (fork = 9001–9005), mas a faixa deixou de ser exclusiva |
+| Identidade | `IMG_NS=ghcr.io/leo-lima92`, `REPO_URL` do kit e `master` no `publish-image.yml` intactos. `melgarafael` novo só em docs/evidence/CHANGELOG. `VOICE_AGENT_IMAGE` segue `ghcr.io/melgarafael/…` (já era assim no HEAD) |
+| SaaS/cobrança | Absorvido integralmente (Asaas/Stripe, plano padrão, troca proporcional, link de pagamento). Módulo `cobranca` nasce desligado |
+| Curso visual / PWA | `curso/` (165 arquivos, ferramenta de captura e montagem; o site publicado é do upstream) e `app/manifest.ts` + `public/notify-sw.js` absorvidos. O manifest usa `marcaDaSaida` e `REGUA_DO_PRODUTO` → nome, ícone e cor do Nexora. A skill `deskcomm-curso` entrou só em `.agents/` (escudo) |
+| Webhook de entrada | `app/api/v1/webhooks/in/[token]` absorvido (+572). **Contrato:** `stage` virou campo reservado (move o card de etapa, sai do mapeamento). Reaproveitar/atualizar card são opções da fonte, desligadas por padrão. Ponte AIOS (`rpc_upsert_lead`, 9001–9005): nenhuma migration nova toca `companies`/`deals`/`linkedin_threads`/`extraction_runs`; em `contacts` só colunas novas com default |
+| ChatGPT por sessão | Nada a reverter: o `login_codex` nasce desligado, falha fechada, só o admin do servidor liga; o upstream trocou o backend do Codex pela API oficial `api.openai.com` (Sign in with ChatGPT) e não o torna padrão em lugar nenhum |
+
+**Validação (host com 0,9–1,1 GB livres; um processo pesado por vez)**
+
+| Verificação | Resultado |
+|---|---|
+| `tsc` do repo inteiro | **OOM** no heap de 4 GB após 13 min (não é erro de tipo). Rodado em 6 fatias (app · components/hooks/workers/curso/resto · lib · tests/unit a–k · l–z · demais testes), cada uma com um erro proposital: **0 erros reais**, sabotagem pega nas 6. Os 9 avisos de "tipos do Node" em `tests/setup` eram artefato da fatia (shim fora do repo); com o shim dentro do repo, 0 |
+| `eslint .` | **Não terminou**: o Claude Code o encerrou por memória crítica do sistema. Nos 31 arquivos tocados: 0 erros, 8 avisos (todos em código vindo do upstream) |
+| `next build` | **Não rodou** (não cabe na RAM livre ao lado do resto) |
+| Gates de migration/baseline/identidade (10 arquivos) | 85/85 (o `namespace-das-imagens` precisou de `--testTimeout=180000`: varredura do repo leva 23 s no Windows) |
+| Marca, idioma, tokens, Inbox (44 arquivos) + componentes resolvidos (121 arquivos) | 7 testes NOVOS do upstream contradiziam decisões do fork e foram adaptados no padrão `ES_SERVIDO`/`COM_GALERIA` da Fase 2: `branding-app-manifest`, `i18n-turco-em-construcao`, `fachada-segue-o-idioma-do-visitante` (+1 caso: perfil `es` gravado), `telas-de-acesso-sem-texto-cru` (espanhol fora da oferta); `textos-fora-da-traducao-nas-sequencias` (galeria não oferecida); `selecionada-legivel-no-escuro` (seleção do Nexora em `surface-elevated` + borda em tinta, com contraste medido nos dois temas — sabotagem `bg-accent-50` pega). Os testes de idioma passam também com `es` reoferecido (os dois ramos medidos) |
+| Falha preexistente | `login-usa-marca-da-instalacao`: o login do Nexora já dizia "Use o e-mail da sua conta {marca}." no HEAD; o teste espera a marca sozinha no `<p>` |
+| `release:conferir` | 4 fragmentos válidos → 1.95.0 |
+
+**Para a Fase 3 (somam às de cima):** `eslint .` e `next build` completos (CI ou máquina com RAM);
+suíte unitária inteira; decidir uma faixa nova para as migrations do fork (o upstream entrou na
+9xxx); documentar no `.env*` as 5 variáveis novas do upstream (decisão do escudo); `VOICE_AGENT_IMAGE`
+ainda aponta para o GHCR do upstream; avisar o time do AIOS Python sobre o `stage` reservado.

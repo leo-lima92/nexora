@@ -2,12 +2,15 @@ import Link from "next/link";
 
 import { EntrarComGoogle } from "@/components/auth/EntrarComGoogle";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { verifyInviteToken } from "@/lib/auth/invite-token";
 import { marcaDaSaida } from "@/lib/branding/saida";
 import { createClient } from "@/lib/supabase/server";
 import { idiomaDoVisitante } from "@/lib/i18n/idiomaAnonimo";
 import { traduzir } from "@/lib/i18n/dicionario";
+import { tituloDaTelaPublica } from "@/lib/i18n/titulo-da-tela-publica";
 
-export const metadata = { title: "Entrar" };
+// A aba no idioma do visitante, como o corpo (`lib/i18n/titulo-da-tela-publica.ts`).
+export const generateMetadata = () => tituloDaTelaPublica((t) => t("Entrar"));
 
 export default async function LoginPage({
   searchParams,
@@ -15,6 +18,8 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; reset?: string; error?: string }>;
 }) {
   const { next, reset, error } = await searchParams;
+  const invite = typeof next === "string" ? next.match(/^\/team\/accept-invite\/([^/?#]+)$/)?.[1] : undefined;
+  const convite = invite ? verifyInviteToken(invite) : null;
   // Fora da árvore de `app/app/layout.tsx` — sem `IdiomaProvider` do lado do
   // servidor (o cliente já tem o seu, montado em `app/(public)/layout.tsx`).
   // Quase nunca há sessão aqui (é a própria tela de entrar), mas resolve do
@@ -145,7 +150,7 @@ export default async function LoginPage({
           )}
         </div>
       )}
-      <LoginForm next={next} />
+      <LoginForm next={next} email={convite?.email} />
       <EntrarComGoogle next={next} />
       {/* Alinhado à ESQUERDA como o título e os campos; separado por hairline
           porque são portas para OUTRAS telas, não parte do formulário. */}
@@ -161,7 +166,7 @@ export default async function LoginPage({
         <p className="text-text-muted">
           {t("Não tem conta?")}{" "}
           <Link
-            href="/signup"
+            href={convite && invite ? `/signup?invite=${encodeURIComponent(invite)}` : "/signup"}
             className="font-medium text-text underline underline-offset-4 transition-colors duration-fast hover:text-accent"
           >
             {t("Criar conta")}

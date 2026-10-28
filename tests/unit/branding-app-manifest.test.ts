@@ -1,20 +1,37 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ marca: vi.fn(), linha: vi.fn() }));
+const mocks = vi.hoisted(() => ({ marca: vi.fn(), linha: vi.fn(), lingua: { valor: null as string | null } }));
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers(mocks.lingua.valor ? { "accept-language": mocks.lingua.valor } : {}),
+}));
 vi.mock("@/lib/branding/saida", () => ({ marcaDaSaida: mocks.marca }));
 vi.mock("@/lib/branding/instalacao", () => ({ marcaDaInstalacao: mocks.linha }));
 import manifest, { dynamic } from "@/app/manifest";
+import { IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO } from "@/lib/i18n/registro";
+
+// FORK NEXORA: o espanhol não é OFERECIDO nesta distribuição — o aparelho em
+// espanhol recebe o padrão (pt-BR). Volta ao contrato do upstream sozinho se o
+// espanhol for reoferecido (`lib/i18n/registro.ts`).
+const ES_SERVIDO = IDIOMAS_OFERECIDOS_NESTA_DISTRIBUICAO.includes("es");
 beforeEach(() => {
+  mocks.lingua.valor = null;
   mocks.marca.mockResolvedValue({ nome: "Central" });
   mocks.linha.mockResolvedValue(null);
 });
 describe("manifest do ícone configurável", () => {
-  it("oferece os dois tamanhos reais, com leitura em runtime", async () => {
+  it("oferece os dois tamanhos reais e o maskable, com leitura em runtime", async () => {
     const valor = await manifest();
     expect(dynamic).toBe("force-dynamic");
     expect(valor.icons).toEqual([
       { src: "/app-icon/192", sizes: "192x192", type: "image/png" },
       { src: "/app-icon/512", sizes: "512x512", type: "image/png" },
+      { src: "/app-icon/maskable", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ]);
+  });
+  it("tem identidade estável igual ao start_url de quem já instalou", async () => {
+    const valor = await manifest();
+    expect(valor.id).toBe("/app");
+    expect(valor.start_url).toBe("/app");
+    expect(valor.description).toBeTruthy();
   });
   it("trocar ou remover o arquivo muda as URLs sem trocar identidade/start_url", async () => {
     mocks.linha.mockResolvedValueOnce({ favicon_path: "platform/primeiro.png" });
@@ -23,8 +40,19 @@ describe("manifest do ícone configurável", () => {
     const depois = await manifest();
     expect(antes.icons?.[0]?.src).not.toBe(depois.icons?.[0]?.src);
     expect(depois.icons?.[0]?.src).toBe("/app-icon/192?v=platform%2Fsegundo.png");
+    expect(depois.icons?.[2]?.src).toBe("/app-icon/maskable?v=platform%2Fsegundo.png");
     expect((await manifest()).icons?.[0]?.src).toBe("/app-icon/192");
     expect(antes.start_url).toBe(depois.start_url);
     expect(antes.scope).toBe(depois.scope);
+    expect(antes.id).toBe(depois.id);
+  });
+  it("a descrição segue o idioma do aparelho que pede (não há idioma da instalação)", async () => {
+    expect((await manifest()).description).toBe("Atendimento e vendas pelo WhatsApp, também no celular.");
+    mocks.lingua.valor = "es-AR,es;q=0.9";
+    expect((await manifest()).description).toBe(
+      ES_SERVIDO
+        ? "Atención y ventas por WhatsApp, también en el celular."
+        : "Atendimento e vendas pelo WhatsApp, também no celular.",
+    );
   });
 });
