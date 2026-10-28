@@ -431,6 +431,9 @@ export async function POST(req: NextRequest, ctx: RouteCtx): Promise<NextRespons
   // `stage` é o OUTRO campo reservado (#2316): é o jeito de quem integra pedir
   // movimento de etapa no card que o `external_id` aponta, e ele só existe
   // nesse caminho — fora dele o envio não tem card para onde apontar.
+  // FORK NEXORA: o rastreio de campanha do AIOS (utm_*, campaign_id, adset_id,
+  // ad_id) NUNCA vem em `stage` — vem em chaves de topo, que o mapeamento manda
+  // para `source_metadata` (ver `CHAVES_DE_ANUNCIO` e a migration 9901).
   const { external_id: _reservedExternalId, stage: _reservedStage, ...payloadForMapping } = payload;
   /** O que o envio pediu de etapa, lido do corpo CRU. */
   const etapaPedida =

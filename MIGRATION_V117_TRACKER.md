@@ -427,3 +427,46 @@ Merge da TAG `v1.94.0` (`ba24d4d36`, 27/10) sobre `0193d377c`: 3.335 commits, 14
 suíte unitária inteira; decidir uma faixa nova para as migrations do fork (o upstream entrou na
 9xxx); documentar no `.env*` as 5 variáveis novas do upstream (decisão do escudo); `VOICE_AGENT_IMAGE`
 ainda aponta para o GHCR do upstream; avisar o time do AIOS Python sobre o `stage` reservado.
+
+---
+
+## Comando 2 — Ponte de Dados AIOS: rastreio de campanha no card (2026-10-28)
+
+**Push (Etapa 1):** `feat/sync-deskcomm-v1.80.0` publicado no `origin` como branch NOVO (até `c33f34fd1`).
+O `origin/master` (21 commits, Nexora original de mai–ago/2026) **não tem ancestral comum** com o
+chassi (`git merge-base` vazio): levar o chassi ao `master` exige `--force` (descarta os 21 commits)
+ou merge de históricos sem relação — decisão do CEO, não feita. O `master` tem, inclusive, uma
+`add_closed_loop_tracking_to_companies.sql` de maio (o Comando 2 original, em `companies`); no chassi
+essas colunas `meta_*` em `companies` chegaram pela 9001.
+
+**Migration `20261028150000_9901_add_closed_loop_tracking_to_leads.sql`** — primeira da faixa **99xx**
+do fork (o upstream ocupa 9016–9025 e segue subindo). `crm_leads` ganha `utm_source`, `utm_medium`,
+`utm_campaign`, `meta_campaign_id`, `meta_adset_id`, `meta_ad_id` como colunas **GERADAS** de
+`source_metadata`:
+
+| Decisão | Por quê |
+|---|---|
+| `crm_leads`, não `contacts`/`companies` | A conversão devolvida à Meta é a venda = o card; o contato guarda o primeiro toque da pessoa, `companies` é a conta B2B da prospecção |
+| Gerada, não escrita | O webhook de entrada do upstream já grava `utm_*` e `campaign_id`/`adset_id`/`ad_id` (`CHAVES_DE_ANUNCIO`, #2317) em `source_metadata`. Coluna comum seria cópia sem dono (anti-pattern 2); gerada não diverge, cobre os cards antigos sem backfill e some junto na anonimização |
+| `meta_*` nula com `gclid` sem `fbclid`/`fbc` | Mesma precedência de `extrairAtribuicaoDoInbound`: os ids não são da Meta quando o clique é do Google. Sem clique nenhum (caso do AIOS) o id é tratado como da Meta |
+| Índice parcial `(organization_id, meta_campaign_id)` | O único caminho de leitura descrito: fechamento por campanha para a CAPI |
+
+**Contrato para o AIOS Python** (cabeçalho da 9901 + `lib/webhooks/inbound.ts` + `route.ts`): chaves de
+TOPO no corpo de `/api/v1/webhooks/in/<token>` — `utm_source`, `utm_medium`, `utm_campaign`,
+`campaign_id`, `adset_id`, `ad_id` (+ `fbclid`/`fbc`/`fbp`). **Nunca em `stage`** (reservado desde a
+v1.94.0: move o card de etapa) e nunca como `meta_campaign_id` (não é chave reservada → `custom_fields`).
+O AIOS não escreve nas colunas: o Postgres recusa (428C9).
+
+**Tipos:** `lib/database.types.ts` é formato curado do upstream (`NonNullable<Json>`, `ComputedFields`,
+geradas como `?: never`); o CLI reescreveria o arquivo inteiro. Gerado de verdade com o
+`postgres-meta:v0.99.0` local contra o banco do `test:db` (baseline install+update): o `Row` de
+`crm_leads` difere do produto **exatamente** pelas 6 colunas, aplicadas no formato do arquivo (Row
+`string | null`; Insert/Update `?: never`, a convenção das geradas).
+
+| Verificação | Resultado |
+|---|---|
+| `test:db` (pg15, `CONFERENCIA_KIT_RELEASE=v1.94.0`) | install `ON_ERROR_STOP=1` ✓, update `ON_ERROR_STOP=1` ✓, isolamento do kit (checkout, v1.94.0, v1.63.0: 190 regras) ✓; `closed-loop-rastreio-no-card` (novo, 8 casos) + `colunas-geradas-nao-sao-escritas`: 2 arquivos, 12/12 |
+| Gates unitários (baseline, manifest, colisão, vocabulário, webhook de entrada, captação, branding) | 29 arquivos, 302/302 |
+| `tsc` na fatia dos 329 arquivos que tocam `crm_leads` (+ importações) | 0 erros reais; sabotagem pega (os erros de matcher do jest-dom são artefato da fatia sem o setup do vitest) |
+| ESLint nos arquivos tocados | 0 |
+| `release:conferir` | 5 fragmentos → 1.95.0 |

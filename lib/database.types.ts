@@ -6673,6 +6673,9 @@ export type Database = {
           last_activity_at: string | null;
           lost_from_stage_id: string | null;
           lost_reason: string | null;
+          meta_ad_id: string | null;
+          meta_adset_id: string | null;
+          meta_campaign_id: string | null;
           organization_id: string;
           owner_agent_id: string | null;
           owner_kind: string | null;
@@ -6688,6 +6691,9 @@ export type Database = {
           tags: string[];
           title: string;
           updated_at: string;
+          utm_campaign: string | null;
+          utm_medium: string | null;
+          utm_source: string | null;
           value_cents: number | null;
           webhook_source_id: string | null;
           won_reason: string | null;
@@ -6708,6 +6714,9 @@ export type Database = {
           last_activity_at?: string | null;
           lost_from_stage_id?: string | null;
           lost_reason?: string | null;
+          meta_ad_id?: never;
+          meta_adset_id?: never;
+          meta_campaign_id?: never;
           organization_id: string;
           owner_agent_id?: string | null;
           owner_kind?: string | null;
@@ -6723,6 +6732,9 @@ export type Database = {
           tags?: string[];
           title: string;
           updated_at?: string;
+          utm_campaign?: never;
+          utm_medium?: never;
+          utm_source?: never;
           value_cents?: number | null;
           webhook_source_id?: string | null;
           won_reason?: string | null;
@@ -6742,6 +6754,9 @@ export type Database = {
           last_activity_at?: string | null;
           lost_from_stage_id?: string | null;
           lost_reason?: string | null;
+          meta_ad_id?: never;
+          meta_adset_id?: never;
+          meta_campaign_id?: never;
           organization_id?: string;
           owner_agent_id?: string | null;
           owner_kind?: string | null;
@@ -6757,6 +6772,9 @@ export type Database = {
           tags?: string[];
           title?: string;
           updated_at?: string;
+          utm_campaign?: never;
+          utm_medium?: never;
+          utm_source?: never;
           value_cents?: number | null;
           webhook_source_id?: string | null;
           won_reason?: string | null;

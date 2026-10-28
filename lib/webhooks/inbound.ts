@@ -75,6 +75,20 @@ export const CHAVES_DE_PLATAFORMA = new Set([
  * `rdstation.ts`, `respondi.ts`), que só mudam ONDE procurar a chave — cada um
  * na forma do seu fornecedor — e entregam em `source_metadata` do mesmo jeito.
  * Fornecedor novo entra por aqui, não com uma lista própria.
+ *
+ * ─── FORK NEXORA: o contrato do AIOS Python (migration 9901) ───────────────
+ *
+ * `crm_leads` tem `utm_source`, `utm_medium`, `utm_campaign`,
+ * `meta_campaign_id`, `meta_adset_id` e `meta_ad_id` como colunas GERADAS de
+ * `source_metadata` — é daqui que elas tiram o valor, e ninguém escreve nelas.
+ * O AIOS manda o rastreio como chaves de TOPO do corpo, com os nomes desta
+ * lista e `utm_*`: `campaign_id`/`adset_id`/`ad_id` viram os `meta_*`, e
+ * `fbclid`/`fbc`/`fbp` dão a identidade do clique. Nunca dentro de `stage`, que
+ * desde a v1.94.0 é campo RESERVADO da rota (pedido de mover de etapa o card do
+ * `external_id`) e sai do corpo antes deste mapeamento. E nunca como
+ * `meta_campaign_id` no corpo: o nome não é reservado, cairia em
+ * `custom_fields` e a coluna ficaria vazia. Acrescentar chave aqui muda o que
+ * chega às colunas — a regra delas está no cabeçalho da 9901.
  */
 export const CHAVES_DE_ANUNCIO: ReadonlySet<string> = new Set([
   "fbclid",

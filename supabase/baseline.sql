@@ -66576,3 +66576,54 @@ update public.lead_field_proposals p
           and vinculo.target_kind = 'contact'
      )
    );
+
+-- ---- closed loop CAPI: rastreio de campanha no card (migration 9901) ----
+-- Colunas GERADAS de source_metadata, que o webhook de entrada já preenche com
+-- utm_* e campaign_id/adset_id/ad_id. Ninguém escreve nelas; o card existente
+-- ganha o valor no alter table. O porquê inteiro está no cabeçalho da migration.
+-- Entrada do AIOS: chaves de topo do corpo, NUNCA em `stage` (reservado, v1.94.0).
+alter table public.crm_leads
+  add column if not exists utm_source text
+    generated always as (nullif(btrim(source_metadata->>'utm_source'), '')) stored,
+  add column if not exists utm_medium text
+    generated always as (nullif(btrim(source_metadata->>'utm_medium'), '')) stored,
+  add column if not exists utm_campaign text
+    generated always as (nullif(btrim(source_metadata->>'utm_campaign'), '')) stored,
+  add column if not exists meta_campaign_id text
+    generated always as (
+      case
+        when source_metadata ? 'gclid' and not (source_metadata ?| array['fbclid', 'fbc']) then null
+        else nullif(btrim(source_metadata->>'campaign_id'), '')
+      end
+    ) stored,
+  add column if not exists meta_adset_id text
+    generated always as (
+      case
+        when source_metadata ? 'gclid' and not (source_metadata ?| array['fbclid', 'fbc']) then null
+        else nullif(btrim(source_metadata->>'adset_id'), '')
+      end
+    ) stored,
+  add column if not exists meta_ad_id text
+    generated always as (
+      case
+        when source_metadata ? 'gclid' and not (source_metadata ?| array['fbclid', 'fbc']) then null
+        else nullif(btrim(source_metadata->>'ad_id'), '')
+      end
+    ) stored;
+
+create index if not exists crm_leads_org_meta_campaign_idx
+  on public.crm_leads (organization_id, meta_campaign_id)
+  where meta_campaign_id is not null;
+
+comment on column public.crm_leads.utm_source is
+  'GERADA de source_metadata.utm_source (migration 9901). Não escreva: mande utm_source como chave de topo no webhook de entrada.';
+comment on column public.crm_leads.utm_medium is
+  'GERADA de source_metadata.utm_medium (migration 9901). Não escreva: mande utm_medium como chave de topo no webhook de entrada.';
+comment on column public.crm_leads.utm_campaign is
+  'GERADA de source_metadata.utm_campaign (migration 9901). Não escreva: mande utm_campaign como chave de topo no webhook de entrada.';
+comment on column public.crm_leads.meta_campaign_id is
+  'GERADA de source_metadata.campaign_id (migration 9901), nula quando o clique é do Google (gclid sem fbclid/fbc). Entrada: campaign_id no corpo, nunca em stage.';
+comment on column public.crm_leads.meta_adset_id is
+  'GERADA de source_metadata.adset_id (migration 9901), nula quando o clique é do Google (gclid sem fbclid/fbc). Entrada: adset_id no corpo, nunca em stage.';
+comment on column public.crm_leads.meta_ad_id is
+  'GERADA de source_metadata.ad_id (migration 9901), nula quando o clique é do Google (gclid sem fbclid/fbc). Entrada: ad_id no corpo, nunca em stage.';
