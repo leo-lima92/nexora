@@ -470,3 +470,75 @@ geradas como `?: never`); o CLI reescreveria o arquivo inteiro. Gerado de verdad
 | `tsc` na fatia dos 329 arquivos que tocam `crm_leads` (+ importações) | 0 erros reais; sabotagem pega (os erros de matcher do jest-dom são artefato da fatia sem o setup do vitest) |
 | ESLint nos arquivos tocados | 0 |
 | `release:conferir` | 5 fragmentos → 1.95.0 |
+
+## Fase 3 — fronteira do Meta Ads + fundação do Copiloto (2026-11-07)
+
+**Regra de arquitetura:** o Nexora NUNCA fala com a Meta de anúncios (nem Conversions API, nem
+leitura de campanha). Esse contexto é do motor AIOS (Python), que lê os cards pelas colunas da 9901.
+A decisão mora em **`lib/nexora/fronteira-meta-ads.ts`** — constante `boolean = false`, não variável de
+ambiente (um operador não religa sem saber um segundo emissor de conversões).
+
+Não existia um "módulo opcional de Meta Ads" para desligar: eram telas, duas linhas do catálogo de
+recursos opcionais e cinco caminhos de envio. Cada corte foi no ponto ÚNICO que o upstream já tem,
+para o próximo sync conflitar o mínimo:
+
+| Corte | Onde | Efeito |
+|---|---|---|
+| Eventos | `lib/plataformas-de-anuncio/registry.ts` — `meta_ads: null` | Os 5 caminhos (compra, etapa, LeadSubmitted por clique e por nascimento, venda pelo canal) param em `plataforma_sem_transporte` no livro-razão, antes de qualquer `fetch`. É o desfecho que o upstream já previa (invariante 4 da restrição de canal). O ramo do canal vem DEPOIS do teste do transporte no `envio.handler.ts`, então nem por ele a venda sai |
+| Leitura | `lib/plataformas-de-anuncio/credenciais-de-leitura.ts` | A credencial de leitura da Meta responde `sem_conexao` sem ir ao banco: contas, campanhas e hierarquia do anúncio na ficha do contato param de chamar a Graph, pelo caminho "não conectado" que já tratavam |
+| Menu | `lib/navigation/interface.ts` → `permitidos()` | `/app/ads/meta` e `/app/settings/meta-ads` somem do menu, hub, ⌘K e editor de interface. **O `NAV_CATALOG` fica intacto**: `destinos` já salvos com essas portas continuam válidos |
+| Recursos opcionais | `lib/recursos-opcionais/catalogo.ts` | Saem `conversoes_meta` e `venda_pelo_canal` |
+| Telas | as duas de Meta Ads + Conversões | Aviso `components/nexora/MetaAdsNoMotorAios.tsx` no lugar do formulário (quem chega por link antigo sabe por quê). Em Conversões ficam Google Ads, UTM, links rastreáveis, script do site e os históricos |
+
+**Não muda:** API Oficial do WhatsApp (recurso `meta` do servidor é canal, não anúncio), Google Ads,
+captura de origem e a atribuição de ENTRADA do clique-para-WhatsApp — o dado que entra é o que o AIOS
+consome. **Fica dormente, não removido:** `lib/plataformas-de-anuncio/meta/*`, `lib/conversoes/*-meta*`,
+as server actions das telas (gravam linha que ninguém lê) e as lições do curso sobre Meta Ads.
+
+**Testes:** cerca nova `tests/unit/nexora-fronteira-meta-ads.test.ts` (6 casos, incluindo uma venda
+ganha atribuída à Meta, com valor, que NÃO dispara `fetch`). 5 testes do upstream que medem o motor da
+Meta (`conversao-pelo-canal`, `conversoes-de-anuncio`, `conversoes-meta-pela-pagina`,
+`conversoes-meta-por-etapa`, `atribuicao-de-anuncio-ponta-a-ponta` — 41 casos — e
+`meta-lead-submitted`, achado depois, pela suíte completa) religam a constante só
+para si via `vi.mock`, para o código dormente seguir correto num sync futuro. `interface-por-empresa`
+e `interface-por-vinculo` adaptados no padrão `ES_SERVIDO`: o esperado desconta as portas desligadas
+(menu lateral 15 → 14), e com a constante religada volta ao número do upstream.
+
+### Webhook de entrada (ponte AIOS) — validado, sem mudança de código
+
+O contrato já estava implementado (#2317 do upstream + 9901): as seis chaves de topo vão a
+`source_metadata`, em minúsculas. Teste novo de ROTA (`tests/unit/nexora-aios-rastreio-no-webhook.test.ts`,
+5 casos) mede a linha que o handler insere. **Achado:** `stage` só é retirado do corpo quando o envio
+traz `external_id`; sem ele, `stage` vira campo personalizado do card (comportamento do upstream,
+#2316). O rastreio não é afetado — as seis chaves são roteadas à parte —, mas o comentário do fork em
+`lib/webhooks/inbound.ts` afirmava mais do que o código faz e foi corrigido. O cabeçalho da 9901 tem a
+mesma imprecisão e **não** foi editado (migration aplicada não se edita).
+
+### Copiloto (Ask AI) — só a interface
+
+`components/ask-ai/AskAI.tsx`: `AskAIProvider` (no `AppShell`), `AskAIBotao` (na `TopBar`, presente em
+toda tela do `/app`) e `AskAIPainel` (irmão do conteúdo no `AppShell`). O painel NÃO pode morar na
+`TopBar`: o `<header>` tem `backdrop-blur`, e `backdrop-filter` vira o containing block dos `fixed`
+descendentes. Fundo `zinc-950` nos dois temas; acento pela marca (`bg-primary`). `z-[46]`: acima do
+Inbox mobile (`z-[45]`), abaixo dos toasts (`z-50`). Sem API: o envio põe a bolha na conversa e não sai
+do navegador; a tela diz "Prévia" e "ainda não responde". O ponto de troca para a conexão é `enviar()`.
+Textos em `DICIONARIO` (es) e `traducoes/en.json`. Teste: `tests/unit/nexora-copiloto-ask-ai.test.tsx`.
+
+**Fragmentos:** `.changes/meta-ads-no-motor-aios.md` (`exige_acao`) e `.changes/copiloto-previa.md`
+(`capacidade_nova`).
+
+**Verificado (em recorte, um processo por vez):** regressão de 52 arquivos (579 casos) + 36 arquivos
+vizinhos da Meta/atribuição/release (509 casos, incluindo os 10 do Copiloto) verdes; cercas de shell e
+i18n verdes; `tsc` recortado 0 erros e ESLint dos arquivos tocados 0/0, ambos com sabotagem provando
+que checam; `release:conferir` → 1.95.0 com 7 fragmentos.
+
+**A suíte completa NÃO fechou:** foi morta por falta de memória no host. O log parcial pegou duas
+regressões desta fase, ambas corrigidas: o fragmento `exige_acao` sem `## Requer atenção` e o
+`meta-lead-submitted` sem o religamento. O resto do que ele acusou não é desta fase:
+`skills-embutidas` e `prova-em-par-esta-escrita` (27 casos) cobram o espelho `.agents/skills` →
+`.claude/skills` das skills `deskcomm-*`, que neste fork não está completo (pasta não tocada aqui);
+os demais são timeouts e resolução de `tsx`/git sob host sem RAM. **Rodar `pnpm test:unit` completo
+numa máquina com memória antes do PR.**
+
+**Não feito nesta sessão (RAM):** `next build`, `tsc`/`eslint` do repo inteiro (feitos em recorte),
+prova pela tela com Playwright (o MCP do Playwright não conectou) e `test:db` (nada de schema mudou).
