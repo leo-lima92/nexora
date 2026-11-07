@@ -85,7 +85,10 @@ export const CHAVES_DE_PLATAFORMA = new Set([
  * lista e `utm_*`: `campaign_id`/`adset_id`/`ad_id` viram os `meta_*`, e
  * `fbclid`/`fbc`/`fbp` dão a identidade do clique. Nunca dentro de `stage`, que
  * desde a v1.94.0 é campo RESERVADO da rota (pedido de mover de etapa o card do
- * `external_id`) e sai do corpo antes deste mapeamento. E nunca como
+ * `external_id`): com `external_id` no envio ele sai do corpo antes deste
+ * mapeamento; SEM `external_id` ele chega aqui e vira campo personalizado do
+ * card. Nos dois casos a campanha dentro dele se perde — medido em
+ * `tests/unit/nexora-aios-rastreio-no-webhook.test.ts`. E nunca como
  * `meta_campaign_id` no corpo: o nome não é reservado, cairia em
  * `custom_fields` e a coluna ficaria vazia. Acrescentar chave aqui muda o que
  * chega às colunas — a regra delas está no cabeçalho da 9901.
