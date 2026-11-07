@@ -18099,6 +18099,51 @@ export const DICIONARIO: Traducoes = {
   'Para não depender do dado, ponha um texto de reserva: {{primeiro_nome|"aluno"}}.': {
     es: 'Para no depender del dato, pon un texto de respaldo: {{primeiro_nome|"alumno"}}.',
   },
+  // FORK NEXORA — Meta Ads fora do CRM (`components/nexora/MetaAdsNoMotorAios.tsx`).
+  "Meta Ads é gerenciado pelo motor de tráfego": {
+    es: "Meta Ads se gestiona en el motor de tráfico",
+  },
+  "Campanhas e retorno de conversões da Meta são feitos pelo motor de tráfego (AIOS), fora deste CRM. Aqui nenhum evento é enviado à Meta: o CRM só recebe a origem de cada lead e a guarda no card.": {
+    es: "Las campañas y el retorno de conversiones de Meta los hace el motor de tráfico (AIOS), fuera de este CRM. Aquí no se envía ningún evento a Meta: el CRM solo recibe el origen de cada lead y lo guarda en la tarjeta.",
+  },
+  "Para o card guardar a campanha, a integração envia utm_source, utm_medium, utm_campaign, campaign_id, adset_id e ad_id no corpo do webhook de entrada.": {
+    es: "Para que la tarjeta guarde la campaña, la integración envía utm_source, utm_medium, utm_campaign, campaign_id, adset_id y ad_id en el cuerpo del webhook de entrada.",
+  },
+  // FORK NEXORA — o Copiloto (`components/ask-ai/AskAI.tsx`).
+  Copiloto: { es: "Copiloto" },
+  "Abrir o copiloto": { es: "Abrir el copiloto" },
+  "Fechar o copiloto": { es: "Cerrar el copiloto" },
+  Prévia: { es: "Vista previa" },
+  "Ajuda para configurar a plataforma: funis, automações e agentes SDR.": {
+    es: "Ayuda para configurar la plataforma: embudos, automatizaciones y agentes SDR.",
+  },
+  "Conversa com o copiloto": { es: "Conversación con el copiloto" },
+  "Olá! Eu ajudo a configurar a plataforma. O que você quer montar hoje?": {
+    es: "¡Hola! Te ayudo a configurar la plataforma. ¿Qué quieres armar hoy?",
+  },
+  "Quero um funil para a minha clínica, com um agente SDR que qualifica os pacientes.": {
+    es: "Quiero un embudo para mi clínica, con un agente SDR que califique a los pacientes.",
+  },
+  "Ótimo. Eu proporia três passos:": { es: "Perfecto. Te propondría tres pasos:" },
+  "Criar o funil com as etapas Novo contato, Qualificado, Agendado e Compareceu.": {
+    es: "Crear el embudo con las etapas Nuevo contacto, Calificado, Agendado y Asistió.",
+  },
+  "Montar uma automação que move o card quando o horário é marcado.": {
+    es: "Armar una automatización que mueva la tarjeta cuando se agenda el horario.",
+  },
+  "Configurar o agente SDR com as perguntas de qualificação da clínica.": {
+    es: "Configurar el agente SDR con las preguntas de calificación de la clínica.",
+  },
+  "Quer que eu comece pelo funil?": { es: "¿Quieres que empiece por el embudo?" },
+  Sugestões: { es: "Sugerencias" },
+  "Criar um funil": { es: "Crear un embudo" },
+  "Montar uma automação": { es: "Armar una automatización" },
+  "Configurar um agente SDR": { es: "Configurar un agente SDR" },
+  "Mensagem para o copiloto": { es: "Mensaje para el copiloto" },
+  "Escreva o que você quer configurar…": { es: "Escribe lo que quieres configurar…" },
+  "Esta é uma prévia da interface: o copiloto ainda não responde.": {
+    es: "Esta es una vista previa de la interfaz: el copiloto todavía no responde.",
+  },
 };
 
 /**

@@ -24,12 +24,17 @@
  * `plataforma_sem_transporte` no livro-razão — que é o invariante 4 da doutrina
  * de restrição de canal: restrição não aplicável é REGISTRADA, não omitida.
  */
+import { NEXORA_FALA_COM_A_META_DE_ANUNCIOS } from "@/lib/nexora/fronteira-meta-ads";
 import { transporteMeta } from "./meta/conversions";
 import { transporteGoogle } from "./google/conversions";
 import type { PlataformaDeAnuncio, TransporteDeConversao } from "./types";
 
 const TRANSPORTES: Record<PlataformaDeAnuncio, TransporteDeConversao | null> = {
-  meta_ads: transporteMeta,
+  // FORK NEXORA: a Meta de anúncios fica SEM transporte — a Conversions API é
+  // do motor AIOS, não do CRM (`lib/nexora/fronteira-meta-ads.ts`). O `null` é
+  // o mecanismo acima: cada envio registra `plataforma_sem_transporte` no
+  // livro-razão em vez de sair, inclusive pelo canal da conversa.
+  meta_ads: NEXORA_FALA_COM_A_META_DE_ANUNCIOS ? transporteMeta : null,
   google_ads: transporteGoogle,
 };
 

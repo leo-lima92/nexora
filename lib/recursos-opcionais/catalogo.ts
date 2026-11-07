@@ -37,6 +37,7 @@ import { lerConfigDoJev } from "@/lib/ai/decisao/config";
 import { capacidadesLigadas, type CapacidadeDaOrganizacao } from "@/lib/organizacao/capacidades";
 import { conversaFicaComQuemAtendeu } from "@/lib/schemas/routing";
 import { configAssinatura } from "@/lib/messaging/assinatura";
+import { recursoDesligadoNoNexora } from "@/lib/nexora/fronteira-meta-ads";
 
 /** Quem decide: o servidor inteiro, a empresa, cada agente, ou o arquivo do servidor. */
 export type NivelDoRecurso = "instalacao" | "organizacao" | "agente" | "servidor";
@@ -661,7 +662,11 @@ export const RECURSOS_OPCIONAIS: readonly RecursoOpcional[] = [
   ...DO_SERVIDOR,
   ...DA_EMPRESA,
   ...DE_CADA_AGENTE,
-];
+  // FORK NEXORA: "Reportar vendas à Meta" e "Enviar vendas pelo canal" não
+  // existem aqui — o retorno de conversão à Meta é do motor AIOS
+  // (`lib/nexora/fronteira-meta-ads.ts`). Mostrá-los seria oferecer uma chave
+  // que não liga nada.
+].filter((r) => !recursoDesligadoNoNexora(r.id));
 
 /**
  * Os módulos que a EMPRESA vê em Configurações › Recursos opcionais: todos os da

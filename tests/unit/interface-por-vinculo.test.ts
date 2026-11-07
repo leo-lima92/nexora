@@ -9,6 +9,7 @@ import {
 } from "@/lib/navigation/interface";
 import { sidebarGroups, searchable, hubSections } from "@/lib/navigation/registry";
 import { signInviteToken, verifyInviteToken } from "@/lib/auth/invite-token";
+import { portaDesligadaNoNexora } from "@/lib/nexora/fronteira-meta-ads";
 const complete = { preset: "completa" } as const;
 const simplified = { preset: "simplificada" } as const;
 const granular = { preset: "completa", destinos: ["/app/products"] } as const;
@@ -16,7 +17,8 @@ const hrefs = (settings: unknown, role: "agent" | "admin" = "admin", platform = 
   destinosDaInterface(settings, platform, role).map((d) => d.href);
 describe("interface por vínculo é apresentação", () => {
   it("legado completa acompanha catálogo e não duplica IDs", () => {
-    expect(hrefs(null)).toEqual(NAV_CATALOG.map((d) => d.href));
+    // FORK NEXORA: menos as portas de Meta Ads (`lib/nexora/fronteira-meta-ads.ts`).
+    expect(hrefs(null)).toEqual(NAV_CATALOG.map((d) => d.href as string).filter((h) => !portaDesligadaNoNexora(h)));
     expect(new Set(NAV_CATALOG.map((d) => d.href)).size).toBe(NAV_CATALOG.length);
   });
   it("simplificada tem operação e Conexões somente quando papel permite", () => {

@@ -25,6 +25,8 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { existeConexaoDeLeitura } from "@/lib/plataformas-de-anuncio/credenciais-de-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { MetaAdsNoMotorAios } from "@/components/nexora/MetaAdsNoMotorAios";
+import { NEXORA_FALA_COM_A_META_DE_ANUNCIOS } from "@/lib/nexora/fronteira-meta-ads";
 
 import { MetaAdsClient } from "./_components/MetaAdsClient";
 
@@ -37,6 +39,16 @@ export default async function MetaAdsPage() {
   if (!activeOrg) redirect("/app");
   if (!(user.is_platform_admin && !user.support) && ROLE_RANK[activeOrg.role] < ROLE_RANK.manager) {
     redirect("/403");
+  }
+
+  // FORK NEXORA: a leitura de campanha é do motor AIOS (`lib/nexora/fronteira-meta-ads.ts`).
+  if (!NEXORA_FALA_COM_A_META_DE_ANUNCIOS) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-semibold tracking-tight">{traduzir("Meta Ads", user.idioma)}</h1>
+        <MetaAdsNoMotorAios idioma={user.idioma} />
+      </div>
+    );
   }
 
   const admin = createAdminClient();

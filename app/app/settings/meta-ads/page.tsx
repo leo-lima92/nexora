@@ -32,6 +32,8 @@ import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 import { existeConexaoDeLeitura } from "@/lib/plataformas-de-anuncio/credenciais-de-leitura";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { MetaAdsNoMotorAios } from "@/components/nexora/MetaAdsNoMotorAios";
+import { NEXORA_FALA_COM_A_META_DE_ANUNCIOS } from "@/lib/nexora/fronteira-meta-ads";
 
 import { FormularioDeMetaAds } from "./_form";
 
@@ -46,6 +48,16 @@ export default async function MetaAdsSettingsPage() {
   // anúncios da empresa, ao lado de billing e API tokens na mesma prancheta.
   if (!(user.is_platform_admin && !user.support) && ROLE_RANK[activeOrg.role] < ROLE_RANK.admin) {
     redirect("/403");
+  }
+
+  // FORK NEXORA: nenhum token de anúncios da Meta é guardado aqui (`lib/nexora/fronteira-meta-ads.ts`).
+  if (!NEXORA_FALA_COM_A_META_DE_ANUNCIOS) {
+    return (
+      <div className="flex h-full flex-col gap-6 overflow-y-auto p-6">
+        <h1 className="text-2xl font-semibold tracking-tight">{traduzir("Meta Ads", user.idioma)}</h1>
+        <MetaAdsNoMotorAios idioma={user.idioma} />
+      </div>
+    );
   }
 
   const admin = createAdminClient();

@@ -83,6 +83,8 @@ import { RegrasDeConversaoGoogle, type EtapaAberta } from "./_regrasGoogle";
 import { listarRegrasGoogle } from "@/lib/conversoes/regras-google";
 import { RegrasDeConversaoMeta } from "./_regrasMeta";
 import { listarRegrasMeta } from "@/lib/conversoes/regras-meta";
+import { MetaAdsNoMotorAios } from "@/components/nexora/MetaAdsNoMotorAios";
+import { NEXORA_FALA_COM_A_META_DE_ANUNCIOS } from "@/lib/nexora/fronteira-meta-ads";
 
 export const metadata = { title: "Conversões" };
 export const dynamic = "force-dynamic";
@@ -348,7 +350,9 @@ export default async function ConversoesPage({
             </div>
           )}
 
-          {estado.conectada && !estado.habilitada && (
+          {/* FORK NEXORA: os blocos da Meta somem; o retorno à Meta é do motor AIOS. */}
+          {!NEXORA_FALA_COM_A_META_DE_ANUNCIOS && <MetaAdsNoMotorAios idioma={idioma} compacto />}
+          {NEXORA_FALA_COM_A_META_DE_ANUNCIOS && estado.conectada && !estado.habilitada && (
             <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
               {t(
                 "O envio está pausado. As vendas continuam sendo registradas aqui, mas não vão para a plataforma enquanto isto estiver desligado.",
@@ -356,7 +360,7 @@ export default async function ConversoesPage({
             </div>
           )}
 
-          {estado.testEventCode && (
+          {NEXORA_FALA_COM_A_META_DE_ANUNCIOS && estado.testEventCode && (
             <div className="rounded-md border border-sky-500/40 bg-sky-500/10 p-4 text-sm">
               {t(
                 "Modo de teste ligado: as vendas vão marcadas como teste e não contam para a otimização. Apague o código de teste quando terminar de conferir.",
@@ -364,8 +368,8 @@ export default async function ConversoesPage({
             </div>
           )}
 
-          <FormularioDeConversoes estado={estado} idioma={idioma} />
-          {organizacao.error || !linhaDaOrganizacao ? (
+          {NEXORA_FALA_COM_A_META_DE_ANUNCIOS && <FormularioDeConversoes estado={estado} idioma={idioma} />}
+          {!NEXORA_FALA_COM_A_META_DE_ANUNCIOS ? null : organizacao.error || !linhaDaOrganizacao ? (
             <p role="alert" className="rounded-md border border-destructive/40 p-4 text-sm">
               {t(
                 "Não foi possível ler a ativação de LeadSubmitted. Atualize a página para tentar novamente.",
@@ -378,15 +382,15 @@ export default async function ConversoesPage({
               idioma={idioma}
             />
           )}
-          <VendaPeloCanal ligada={vendaPeloCanal} idioma={idioma} />
-          {estado.conectada && (
+          {NEXORA_FALA_COM_A_META_DE_ANUNCIOS && <VendaPeloCanal ligada={vendaPeloCanal} idioma={idioma} />}
+          {NEXORA_FALA_COM_A_META_DE_ANUNCIOS && estado.conectada && (
             <IdentidadeDaConversao
               pageId={identidadeMeta.pageId}
               whatsappBusinessAccountId={identidadeMeta.whatsappBusinessAccountId}
               idioma={idioma}
             />
           )}
-          {(estado.conectada || vendaPeloCanal) && !etapas.error && regrasMeta && (
+          {NEXORA_FALA_COM_A_META_DE_ANUNCIOS && (estado.conectada || vendaPeloCanal) && !etapas.error && regrasMeta && (
             <RegrasDeConversaoMeta
               etapas={etapasAbertas}
               regras={regrasMeta}

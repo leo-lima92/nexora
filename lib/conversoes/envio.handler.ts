@@ -210,8 +210,9 @@ export async function processarConversao(
   const transporte = transporteDe(plataforma);
   if (!transporte) {
     // Plataforma do vocabulário declarada sem transporte no registro — o
-    // desfecho CERTO, não um bug (invariante 4 da restrição de canal). Hoje
-    // nenhuma cai aqui: `meta_ads` e `google_ads` têm transporte.
+    // desfecho CERTO, não um bug (invariante 4 da restrição de canal). FORK
+    // NEXORA: `meta_ads` cai aqui sempre (`lib/nexora/fronteira-meta-ads.ts`),
+    // e ANTES do ramo do canal da conversa — então nem por ele a venda sai.
     await registra("skipped", "plataforma_sem_transporte");
     return ok("skipped", "plataforma_sem_transporte");
   }

@@ -7,6 +7,15 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// FORK NEXORA: este arquivo mede o motor de conversões da Meta do UPSTREAM, que
+// no fork fica sem transporte (`lib/nexora/fronteira-meta-ads.ts`). Religado só
+// aqui, para o código dormente continuar correto num sync futuro; o lado
+// desligado é medido em `tests/unit/nexora-fronteira-meta-ads.test.ts`.
+vi.mock("@/lib/nexora/fronteira-meta-ads", async (original) => ({
+  ...(await original<Record<string, unknown>>()),
+  NEXORA_FALA_COM_A_META_DE_ANUNCIOS: true,
+}));
+
 import { conversaoDeVendaHandler } from "@/lib/conversoes/envio.handler";
 import type { EventRow } from "@/lib/event-log/dispatcher";
 import { INTERNOS, transporteMeta } from "@/lib/plataformas-de-anuncio/meta/conversions";

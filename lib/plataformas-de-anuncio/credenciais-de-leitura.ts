@@ -21,6 +21,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { logger } from "@/lib/logger";
+import { NEXORA_FALA_COM_A_META_DE_ANUNCIOS } from "@/lib/nexora/fronteira-meta-ads";
 import { decryptWebhookSecret } from "@/lib/webhooks/secrets";
 import type { CredencialDeLeitura, PlataformaDeAnuncio } from "./types";
 
@@ -43,6 +44,12 @@ export async function lerCredencialDeLeitura(
   organizationId: string,
   plataforma: PlataformaDeAnuncio,
 ): Promise<LeituraDeCredencialDeLeitura> {
+  // FORK NEXORA: a leitura de campanha da Meta é do motor AIOS. `sem_conexao`
+  // é o caso que as rotas de contas, campanhas e hierarquia já tratam — nenhum
+  // token guardado antes desta decisão volta a sair para a Graph.
+  if (plataforma === "meta_ads" && !NEXORA_FALA_COM_A_META_DE_ANUNCIOS) {
+    return { ok: false, motivo: "sem_conexao" };
+  }
   const { data, error } = await admin
     .from("ad_insights_connections")
     .select("access_token_encrypted, default_account_id")

@@ -32,8 +32,15 @@ import {
   type InterfaceSettings,
 } from "@/lib/navigation/interface";
 import { GRUPO_NO_RODAPE, sidebarGroups } from "@/lib/navigation/registry";
+import { portaDesligadaNoNexora } from "@/lib/nexora/fronteira-meta-ads";
 
 const completa = { preset: "completa" } as const;
+
+// FORK NEXORA: as portas de Meta Ads saem do menu (`lib/nexora/fronteira-meta-ads.ts`).
+// O esperado acompanha a constante — religada, volta a ser o número do upstream.
+const CATALOGO_NO_MENU = NAV_CATALOG.map((d) => d.href as string).filter((h) => !portaDesligadaNoNexora(h));
+const ITENS_NO_MENU_LATERAL_HOJE =
+  15 - NAV_CATALOG.filter((d) => "sidebar" in d && d.sidebar && portaDesligadaNoNexora(d.href)).length;
 const simplificada = { preset: "simplificada" } as const;
 
 const hrefs = (settings: unknown, role: "agent" | "admin" = "admin") =>
@@ -55,7 +62,7 @@ describe("portas por empresa (issue #1341)", () => {
   it("sem escolha de nenhum dos lados nada muda: a empresa completa segue completa", () => {
     expect(combinarInterfaces(completa, completa)).toEqual(INTERFACE_COMPLETA);
     expect(combinarInterfaces(undefined, null).destinos).toBeUndefined();
-    expect(hrefs(combinarInterfaces(completa, completa))).toEqual(NAV_CATALOG.map((d) => d.href));
+    expect(hrefs(combinarInterfaces(completa, completa))).toEqual(CATALOGO_NO_MENU);
   });
 
   it("o vínculo NÃO abre porta que a empresa não oferece", () => {
@@ -185,9 +192,9 @@ describe("medição da folga (pergunta de aceite da issue #1341)", () => {
    * IA 3, canais 2, análise 3), medido aqui pelo módulo que alimenta o menu.
    */
   it("hoje: 15 itens no menu lateral, folga 0 (é o teto da dobra a 1280x900)", () => {
-    expect(itensNoMenuLateral(INTERFACE_COMPLETA)).toBe(15);
+    expect(itensNoMenuLateral(INTERFACE_COMPLETA)).toBe(ITENS_NO_MENU_LATERAL_HOJE);
     // `undefined` é o caminho de quem não tem escolha nenhuma gravada
-    expect(itensNoMenuLateral(undefined)).toBe(15);
+    expect(itensNoMenuLateral(undefined)).toBe(ITENS_NO_MENU_LATERAL_HOJE);
   });
 
   /**
@@ -196,7 +203,7 @@ describe("medição da folga (pergunta de aceite da issue #1341)", () => {
    * tem como empurrar o instrumento de tela para o vermelho.
    */
   it("configuração COMPLETA (ninguém escolheu): 15 itens, folga 0 — igual a hoje", () => {
-    expect(itensNoMenuLateral(combinarInterfaces(completa, completa))).toBe(15);
+    expect(itensNoMenuLateral(combinarInterfaces(completa, completa))).toBe(ITENS_NO_MENU_LATERAL_HOJE);
   });
 
   it("configuração SIMPLIFICADA (empresa escolhe o preset): 6 itens, folga 9", () => {

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ROLE_RANK, type Role } from "@/lib/auth/types";
 import type { ModuloOpcional } from "@/lib/instalacao/modulos";
 import type { CapacidadeDaOrganizacao } from "@/lib/organizacao/capacidades";
+import { portaDesligadaNoNexora } from "@/lib/nexora/fronteira-meta-ads";
 import { NAV_CATALOG, type NavMetadata, type NavDestinationId } from "./catalogo";
 
 const ids = NAV_CATALOG.map((d) => d.href);
@@ -123,6 +124,10 @@ export function permitidos(
 ): NavMetadata[] {
   return (NAV_CATALOG as readonly NavMetadata[]).filter(
     (d) =>
+      // FORK NEXORA: as portas de Meta Ads somem do menu, do hub, do ⌘K e do
+      // editor de interface — o catálogo fica intacto, então `destinos` já
+      // salvos com elas continuam válidos (`lerInterface` filtra pelo catálogo).
+      !portaDesligadaNoNexora(d.href) &&
       canSee(d, platform, role) &&
       (!modulos || !d.modulo || modulos.includes(d.modulo)) &&
       (!capacidades || !d.capacidade || capacidades.includes(d.capacidade)),
