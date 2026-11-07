@@ -11,6 +11,7 @@ import { useCrmAlerts } from "@/hooks/notifications/useCrmAlerts";
 import { useNotifyOpenFromServiceWorker } from "@/lib/notifications/notify_open";
 import { ensureNotifyServiceWorker } from "@/lib/notifications/service_worker";
 import { estiloDaReserva, useOcupacaoDoRodape } from "@/lib/ui/rodape-ocupado";
+import { AskAIPainel, AskAIProvider } from "@/components/ask-ai/AskAI";
 
 interface AppShellProps {
   sidebarCollapsed: boolean;
@@ -63,6 +64,9 @@ export function AppShell({ sidebarCollapsed, podeAtender, children }: AppShellPr
       topo ficam ACIMA da casca, e sem o desconto o documento media a tela
       mais a faixa — rolável justo quando o WhatsApp está desconectado.
     */
+    // FORK NEXORA: o provider do Copiloto envolve a casca inteira — o botão está
+    // na TopBar e o painel aqui embaixo, fora do `<header>` (ver AskAI.tsx).
+    <AskAIProvider>
     <div className="flex min-h-[calc(100dvh-var(--faixas-de-cima,0px))] w-full bg-bg">
       <BarraDeProgressoNavegacao />
       <div className="hidden md:block">
@@ -131,6 +135,8 @@ export function AppShell({ sidebarCollapsed, podeAtender, children }: AppShellPr
         lateral aparece, logo acima.
       */}
       <BarraInferior />
+      <AskAIPainel />
     </div>
+    </AskAIProvider>
   );
 }

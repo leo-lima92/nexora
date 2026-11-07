@@ -1,4 +1,5 @@
 "use client";
+import { AskAIBotao } from "@/components/ask-ai/AskAI";
 import { AlertsBell } from "./AlertsBell";
 import { AvisoDePropostaEmDestaque } from "./AvisoDePropostaEmDestaque";
 import { MobileSidebar } from "./MobileSidebar";
@@ -17,6 +18,8 @@ export function TopBar() {
         <SearchTrigger />
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {/* FORK NEXORA: o Copiloto. O painel mora no AppShell (ver AskAI.tsx). */}
+        <AskAIBotao />
         <AlertsBell />
         <AvisoDePropostaEmDestaque />
         <UserMenu />
