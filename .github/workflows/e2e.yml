@@ -1364,6 +1364,7 @@ jobs:
         qa-l12-funil.spec.ts
         i18n-espanhol-na-tela.spec.ts
         copiloto-ask-ai.spec.ts
+        trafego-aios.spec.ts
         extensoes-declarativas.spec.ts
         marca-logo.spec.ts
         suporte-temporario.spec.ts

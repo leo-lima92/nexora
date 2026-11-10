@@ -791,6 +791,26 @@ export const NAV_CATALOG = [
     minRole: "manager",
     sidebar: true,
   },
+  {
+    // FORK NEXORA — a porta para o motor de tráfego (AIOS), que roda fora do CRM.
+    //
+    // Em "Canais", e não em "Análise" (onde a Meta Ads do upstream morava):
+    // aquela tela LIA resultado; esta PEDE campanha — é por onde a empresa faz
+    // gente chegar, vizinha de Webhooks, que é por onde a origem dessa gente
+    // (utm, campaign_id) entra no card.
+    //
+    // `sidebar: true` não aumenta o menu do fork: a linha de Meta Ads saiu dele
+    // (`lib/nexora/fronteira-meta-ads.ts`), e esta ocupa o lugar que sobrou.
+    href: "/app/aios",
+    label: "Tráfego AIOS",
+    description: "Peça campanhas de tráfego pago conversando com o Estrategista de Tráfego.",
+    icon: "Megaphone",
+    group: "canais",
+    // `manager`, a MESMA régua da tela e da rota de despacho: o pedido vira
+    // campanha paga com a verba da empresa inteira.
+    minRole: "manager",
+    sidebar: true,
+  },
 
   // ---- Análise — olhar o sistema funcionando ----
   //

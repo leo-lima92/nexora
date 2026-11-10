@@ -949,6 +949,19 @@ export const AUDIT_ACTIONS = [
    */
   "ai.copiloto_turn",
   /**
+   * FORK NEXORA — um pedido da tela Tráfego AIOS entregue ao motor de tráfego
+   * (`POST /api/v1/aios-dispatch`). O efeito acontece FORA do CRM: é o motor que
+   * monta a campanha, e esta linha é o que prova quem pediu, quando e com que
+   * `request_id` — o mesmo que vai no cabeçalho para o motor.
+   *
+   * `confirmado: false` é o caso em que o motor não respondeu no prazo: o pedido
+   * pode ter chegado, e é justamente essa dúvida que precisa ficar registrada.
+   * Pedido que o motor recusou ou que não saiu do CRM não audita (não houve efeito).
+   *
+   * ⚠️ SEM O TEXTO do pedido, pelo mesmo motivo de `ai.copiloto_turn`.
+   */
+  "aios.campaign_dispatched",
+  /**
    * O aviso de caso no WhatsApp da equipe (migration 0292).
    *
    * Três códigos e não um: "saiu", "não saiu em definitivo" e "alguém mudou a

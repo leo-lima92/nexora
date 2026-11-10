@@ -18168,6 +18168,102 @@ export const DICIONARIO: Traducoes = {
   "O painel do Copiloto mostra um aviso no lugar da resposta, e nenhum funil é criado.": {
     es: "El panel del Copiloto muestra un aviso en lugar de la respuesta, y no se crea ningún embudo.",
   },
+
+  // FORK NEXORA — Tráfego AIOS: a tela do Estrategista de Tráfego (`components/aios/`)
+  // e a rota de despacho (`app/api/v1/aios-dispatch/route.ts`).
+  "Tráfego AIOS": {
+    es: "Tráfico AIOS",
+  },
+  "Peça campanhas de tráfego pago conversando com o Estrategista de Tráfego.": {
+    es: "Pide campañas de tráfico pago conversando con el Estratega de Tráfico.",
+  },
+  "Peça campanhas de tráfego pago conversando. O pedido vai para o motor de tráfego, que cuida dos anúncios fora do CRM.": {
+    es: "Pide campañas de tráfico pago conversando. El pedido va al motor de tráfico, que se ocupa de los anuncios fuera del CRM.",
+  },
+  "Estrategista de Tráfego": {
+    es: "Estratega de Tráfico",
+  },
+  "Descreva a campanha. Cada mensagem é um pedido entregue ao motor de tráfego.": {
+    es: "Describe la campaña. Cada mensaje es un pedido entregado al motor de tráfico.",
+  },
+  "Conversa com o Estrategista de Tráfego": {
+    es: "Conversación con el Estratega de Tráfico",
+  },
+  "Olá! Conte o que você quer anunciar: o objetivo, para quem, quanto pretende investir e por quanto tempo.": {
+    es: "¡Hola! Cuéntame qué quieres anunciar: el objetivo, para quién, cuánto piensas invertir y por cuánto tiempo.",
+  },
+  "Enviando instruções para o motor de IA…": {
+    es: "Enviando instrucciones al motor de IA…",
+  },
+  "Campanha de leads para o WhatsApp": {
+    es: "Campaña de leads para WhatsApp",
+  },
+  "Remarketing para quem já conversou com a gente": {
+    es: "Remarketing para quienes ya conversaron con nosotros",
+  },
+  "Campanha para divulgar uma promoção": {
+    es: "Campaña para difundir una promoción",
+  },
+  "Pedido para o Estrategista de Tráfego": {
+    es: "Pedido para el Estratega de Tráfico",
+  },
+  "Ex.: campanha de leads para clínica, R$ 50 por dia, por 15 dias…": {
+    es: "Ej.: campaña de leads para clínica, R$ 50 por día, durante 15 días…",
+  },
+  "Enter envia, Shift+Enter quebra a linha. O pedido sai uma vez só: se falhar, é você quem decide reenviar.": {
+    es: "Enter envía, Shift+Enter hace un salto de línea. El pedido sale una sola vez: si falla, tú decides si lo reenvías.",
+  },
+  "Você descreve a campanha: objetivo, público, verba e período.": {
+    es: "Describes la campaña: objetivo, público, presupuesto y período.",
+  },
+  "O CRM entrega o pedido ao motor de tráfego (AIOS), que roda fora daqui.": {
+    es: "El CRM entrega el pedido al motor de tráfico (AIOS), que funciona fuera de aquí.",
+  },
+  "O motor monta a campanha do lado dele. O resultado ainda não aparece nesta tela.": {
+    es: "El motor arma la campaña por su lado. El resultado todavía no aparece en esta pantalla.",
+  },
+  "Pedidos desta sessão": {
+    es: "Pedidos de esta sesión",
+  },
+  "A lista recomeça quando a página é recarregada.": {
+    es: "La lista vuelve a empezar cuando se recarga la página.",
+  },
+  "Nenhum pedido enviado ainda.": {
+    es: "Todavía no se envió ningún pedido.",
+  },
+  "Entregue ao motor": {
+    es: "Entregado al motor",
+  },
+  "Sem confirmação": {
+    es: "Sin confirmación",
+  },
+  "Instruções entregues ao motor de tráfego.": {
+    es: "Instrucciones entregadas al motor de tráfico.",
+  },
+  "O pedido não foi enviado ao motor de tráfego. Tente de novo em instantes.": {
+    es: "El pedido no se envió al motor de tráfico. Inténtalo de nuevo en unos instantes.",
+  },
+  "Não consegui falar com o servidor. Confira a conexão e tente de novo.": {
+    es: "No pude comunicarme con el servidor. Revisa la conexión e inténtalo de nuevo.",
+  },
+  "Não entendi o pedido enviado ao Estrategista de Tráfego.": {
+    es: "No entendí el pedido enviado al Estratega de Tráfico.",
+  },
+  "Muitos pedidos seguidos. Tente em um minuto.": {
+    es: "Demasiados pedidos seguidos. Inténtalo en un minuto.",
+  },
+  "O motor de tráfego não confirmou o recebimento a tempo. O pedido pode ter chegado: se você enviar de novo, a campanha pode ser gerada duas vezes.": {
+    es: "El motor de tráfico no confirmó la recepción a tiempo. El pedido puede haber llegado: si lo envías de nuevo, la campaña puede generarse dos veces.",
+  },
+  "O endereço do motor de tráfego está mal configurado nesta instalação. Avise quem instalou o sistema.": {
+    es: "La dirección del motor de tráfico está mal configurada en esta instalación. Avisa a quien instaló el sistema.",
+  },
+  "O motor de tráfego recusou o pedido. Tente de novo; se continuar, avise quem instalou o sistema.": {
+    es: "El motor de tráfico rechazó el pedido. Inténtalo de nuevo; si continúa, avisa a quien instaló el sistema.",
+  },
+  "Não consegui falar com o motor de tráfego. Tente de novo em instantes; se continuar, avise quem instalou o sistema.": {
+    es: "No pude comunicarme con el motor de tráfico. Inténtalo de nuevo en unos instantes; si continúa, avisa a quien instaló el sistema.",
+  },
 };
 
 /**

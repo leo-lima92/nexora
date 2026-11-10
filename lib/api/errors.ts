@@ -355,6 +355,7 @@ export const ApiErrorCodes = {
   // 500 / upstream
   internal_error: "internal_error",
   upstream_unavailable: "upstream_unavailable",
+  upstream_timeout: "upstream_timeout", // 504: o serviço de fora não confirmou no prazo — o efeito PODE ter acontecido (ex.: despacho ao motor AIOS)
   unavailable: "unavailable", // 503: dependência de config ausente (ex.: pool do engine sem SUPABASE_DB_URL)
   waha_error: "waha_error",
   channel_unavailable: "channel_unavailable", // 502: o transporte do canal não respondeu (ex.: listar grupos com a sessão fora de WORKING)

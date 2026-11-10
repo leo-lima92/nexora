@@ -294,6 +294,16 @@ const schema = z.object({
   UPSTASH_REDIS_REST_URL: required("UPSTASH_REDIS_REST_URL"),
   UPSTASH_REDIS_REST_TOKEN: required("UPSTASH_REDIS_REST_TOKEN"),
 
+  // ─── FORK NEXORA — motor de tráfego (AIOS, Python, fora do CRM) ───
+  //
+  // O endereço para onde `POST /api/v1/aios-dispatch` entrega os pedidos da tela
+  // Tráfego AIOS, e o token que o CRM apresenta ao motor (`Authorization: Bearer`).
+  // `z.string()` e não `z.url()`: endereço digitado errado não pode impedir o
+  // CRM de subir — a rota responde 503 dizendo que é configuração. Vazio = o
+  // endereço provisório e nenhum token. Quem lê é `lib/aios/despacho.ts`.
+  AIOS_PYTHON_URL: z.string().optional().default(""),
+  AIOS_PYTHON_TOKEN: z.string().optional().default(""),
+
   // AI providers — env-gated. Worker no-ops with skip="ai_gateway_key_missing"
   // when AI_GATEWAY_API_KEY is absent, so production boot must not be fatal.
   AI_GATEWAY_API_KEY: z.string().optional().default(""),
