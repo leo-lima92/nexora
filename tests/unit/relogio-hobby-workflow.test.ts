@@ -15,7 +15,11 @@ describe("workflow relogio (Hobby)", () => {
 
   it("bate o tick HTTP e não o cron diário da Vercel", () => {
     expect(yml).toContain(CAMINHO_DO_TICK);
-    expect(yml).toMatch(/schedule:/);
+    // Fork Nexora: o schedule fica COMENTADO (só workflow_dispatch). O teste
+    // ancora as duas metades: a linha segue no arquivo e nenhuma está ativa.
+    expect(yml).toMatch(/^\s*# schedule:/m);
+    expect(yml).not.toMatch(/^\s*schedule:/m);
+    expect(yml).toMatch(/^\s*workflow_dispatch:/m);
     expect(yml).toMatch(/RELOGIO_LIGADO/);
     expect(yml).toMatch(/RELOGIO_APP_URL/);
     expect(yml).toMatch(/RELOGIO_SECRET/);

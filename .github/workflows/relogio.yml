@@ -20,10 +20,13 @@
 name: relogio
 
 on:
-  schedule:
-    # A cada 5 min. O GitHub atrasa schedule com folga (5–15 min é normal); quem
-    # precisa de minuto a minuto usa a Opção B do runbook (cron-job.org).
-    - cron: "*/5 * * * *"
+  # Fork Nexora: o `schedule` herdado do upstream fica desligado — no fork ele
+  # falhava a cada 5 min e gerava e-mail de falha. Comentado (não apagado) para o
+  # merge do upstream continuar limpo. Rodar à mão: Actions › Run workflow.
+  # schedule:
+  #   # A cada 5 min. O GitHub atrasa schedule com folga (5–15 min é normal); quem
+  #   # precisa de minuto a minuto usa a Opção B do runbook (cron-job.org).
+  #   - cron: "*/5 * * * *"
   workflow_dispatch:
 
 # Nenhum escopo: este job não fala com a API do GitHub, só faz um POST na

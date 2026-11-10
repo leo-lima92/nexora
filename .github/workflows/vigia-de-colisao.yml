@@ -19,8 +19,11 @@ name: vigia-de-colisao
 # De hora em hora é ruído; de 6 em 6 horas é tarde para uma fila que vira em um
 # dia. 2h é o meio-termo declarado, não medido — e o custo é um job de segundos.
 on:
-  schedule:
-    - cron: "17 */2 * * *"
+  # Fork Nexora: o `schedule` herdado do upstream fica desligado — no fork ele
+  # falhava a cada 2h e gerava e-mail de falha. Comentado (não apagado) para o
+  # merge do upstream continuar limpo. Rodar à mão: Actions › Run workflow.
+  # schedule:
+  #   - cron: "17 */2 * * *"
   workflow_dispatch: {}
 
 # `pull-requests: write` é o mínimo que comenta e rotula. Sem o bloco, o token
