@@ -66,20 +66,20 @@
   --color-border: #e5e7eb;
   --color-border-strong: #d4d4d4;
 
-  /* Accent — Vermillion Signal (11 paradas; 600 é o valor canônico #e42b0c) */
-  --color-accent-50: #fef4f1;
-  --color-accent-100: #fde3db;
-  --color-accent-200: #fbc4b4;
-  --color-accent-300: #f89d84;
-  --color-accent-400: #f2704e;
-  --color-accent-500: #ea4b26;
-  --color-accent-600: #e42b0c;
-  --color-accent-700: #bd2109;
-  --color-accent-800: #951a07;
-  --color-accent-900: #6e1305;
-  --color-accent-950: #3d0a03;
+  /* Accent — Nexora Indigo (11 paradas; 600 é o valor canônico #5b3fd6, rampa de rampaDeSemente) */
+  --color-accent-50: #f3f4ff;
+  --color-accent-100: #e5e6ff;
+  --color-accent-200: #cacbff;
+  --color-accent-300: #a7a6ff;
+  --color-accent-400: #8980ff;
+  --color-accent-500: #7258ff;
+  --color-accent-600: #5b3fd6;
+  --color-accent-700: #4837a7;
+  --color-accent-800: #3b3085;
+  --color-accent-900: #322b6d;
+  --color-accent-950: #19153d;
   --color-accent: var(--color-accent-600);
-  /* 4.52:1 sobre #e42b0c — passa AA com folga de 0.02. Não confie no número de
+  /* 6.72:1 sobre #5b3fd6 (Nexora Indigo) — passa AA com folga. Não confie no número de
      cabeça: tests/unit/contraste-acao-wcag.test.ts recalcula a cada CI. */
   --color-accent-fg: #ffffff;
   --color-accent-soft: var(--color-accent-50);
@@ -91,7 +91,7 @@
      saturação total um degrau abaixo do 600: vibrante, não terra. Medido com
      branco por cima: 4.62:1 no pior ponto da interpolação. Numa linha só de
      propósito: o espelho claro/escuro e a régua leem prop:valor por linha. */
-  --gradient-vermillion: linear-gradient(94deg, rgb(222, 42, 11) -33.85%, rgb(212, 64, 0) -1.54%, rgb(222, 42, 11) 73.55%);
+  --gradient-vermillion: linear-gradient(94deg, rgb(91, 63, 214) -33.85%, rgb(79, 52, 200) -1.54%, rgb(91, 63, 214) 73.55%);
 
   /* Neutros — rampa acromática (light) */
   --color-neutral-50: #fafafa;
@@ -270,7 +270,7 @@
   --color-accent-soft: var(--color-accent-50);
   --color-accent-hover: var(--color-accent-700);
   --color-cta-fg: #ffffff;
-  --gradient-vermillion: linear-gradient(94deg, rgb(222, 42, 11) -33.85%, rgb(212, 64, 0) -1.54%, rgb(222, 42, 11) 73.55%);
+  --gradient-vermillion: linear-gradient(94deg, rgb(91, 63, 214) -33.85%, rgb(79, 52, 200) -1.54%, rgb(91, 63, 214) 73.55%);
   --color-neutral-50: #fafafa;
   --color-neutral-100: #f5f5f5;
   --color-neutral-200: #e5e7eb;
@@ -347,28 +347,28 @@
   --color-border: #2b2b2b;
   --color-border-strong: #3f3f3f;
 
-  /* A rampa é a MESMA; o accent sobe para a parada 400 (#f2704e) porque #e42b0c
+  /* A rampa é a MESMA; o accent sobe para a parada 400 (#8980ff) porque #5b3fd6
      sobre #141414 fecha o contorno e some. Texto sobre ela é tinta escura:
-     #141414 sobre #f2704e dá 6.5:1; branco daria 3.4:1 e reprovaria. */
-  --color-accent-50: #fef4f1;
-  --color-accent-100: #fde3db;
-  --color-accent-200: #fbc4b4;
-  --color-accent-300: #f89d84;
-  --color-accent-400: #f2704e;
-  --color-accent-500: #ea4b26;
-  --color-accent-600: #e42b0c;
-  --color-accent-700: #bd2109;
-  --color-accent-800: #951a07;
-  --color-accent-900: #6e1305;
-  --color-accent-950: #3d0a03;
+     #141414 sobre #8980ff dá 6.5:1; branco daria 3.4:1 e reprovaria. */
+  --color-accent-50: #f3f4ff;
+  --color-accent-100: #e5e6ff;
+  --color-accent-200: #cacbff;
+  --color-accent-300: #a7a6ff;
+  --color-accent-400: #8980ff;
+  --color-accent-500: #7258ff;
+  --color-accent-600: #5b3fd6;
+  --color-accent-700: #4837a7;
+  --color-accent-800: #3b3085;
+  --color-accent-900: #322b6d;
+  --color-accent-950: #19153d;
   --color-accent: var(--color-accent-400);
   --color-accent-fg: #141414;
-  --color-accent-soft: rgba(242, 112, 78, 0.14);
+  --color-accent-soft: rgba(137, 128, 255, 0.14);
   --color-accent-hover: var(--color-accent-300);
   /* CTA no escuro: vermillion sobe de tom, texto vira tinta. Medido com
      #141414 por cima: 5.57:1 no pior ponto. */
   --color-cta-fg: #141414;
-  --gradient-vermillion: linear-gradient(94deg, rgb(255, 77, 46) -33.85%, rgb(255, 138, 74) -1.54%, rgb(255, 77, 46) 73.55%);
+  --gradient-vermillion: linear-gradient(94deg, rgb(137, 128, 255) -33.85%, rgb(167, 166, 255) -1.54%, rgb(137, 128, 255) 73.55%);
 
   --color-neutral-50: #f5f5f5;
   --color-neutral-100: #e5e5e5;

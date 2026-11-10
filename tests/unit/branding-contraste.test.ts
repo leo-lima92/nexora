@@ -61,7 +61,7 @@ describe("extrairRegua — os pares saem do globals.css, nunca de lista à mão"
     // Vermillion 600 — a rampa é DESENHADA À MÃO (decisão do CTO, 2026-09-09); a
     // catraca `rampaDeSemente` está desligada para o produto, então este stop é
     // literal do globals.css, não saída de algoritmo.
-    expect(REGUA.rampaDoProduto[6]).toBe("#e42b0c");
+    expect(REGUA.rampaDoProduto[6]).toBe("#5b3fd6"); // Nexora Indigo (fork) — era a vermillion #e42b0c do upstream
     expect(REGUA.claro.neutros).toHaveLength(11);
     // Neutros acromáticos (Carbon): medido em 2026-09-10 no globals.css v4.
     expect(REGUA.escuro.neutros[9]).toBe("#1c1c1c");
@@ -134,12 +134,12 @@ describe("extrairRegua — os pares saem do globals.css, nunca de lista à mão"
         (p) => p.papel === papel && p.superficie === superficie,
       )?.razao ?? 0;
 
-    expect(razaoEm(REGUA.claro, "--color-accent", "--color-bg")).toBeCloseTo(4.14, 2);
-    expect(razaoEm(REGUA.claro, "--color-accent", "--color-surface")).toBeCloseTo(4.52, 2);
-    expect(razaoEm(REGUA.claro, "--color-accent-fg", "--color-accent-fg")).toBeCloseTo(4.65, 2);
-    expect(razaoEm(REGUA.claro, "--color-accent-hover", "--color-bg")).toBeCloseTo(5.69, 2);
-    expect(razaoEm(REGUA.escuro, "--color-accent", "--color-bg")).toBeCloseTo(6.32, 2);
-    expect(razaoEm(REGUA.escuro, "--color-accent-fg", "--color-accent-fg")).toBeCloseTo(7.2, 2);
+    expect(razaoEm(REGUA.claro, "--color-accent", "--color-bg")).toBeCloseTo(6.16, 2);
+    expect(razaoEm(REGUA.claro, "--color-accent", "--color-surface")).toBeCloseTo(6.72, 2);
+    expect(razaoEm(REGUA.claro, "--color-accent-fg", "--color-accent-fg")).toBeCloseTo(6.72, 2);
+    expect(razaoEm(REGUA.claro, "--color-accent-hover", "--color-bg")).toBeCloseTo(8.09, 2);
+    expect(razaoEm(REGUA.escuro, "--color-accent", "--color-bg")).toBeCloseTo(5.79, 2);
+    expect(razaoEm(REGUA.escuro, "--color-accent-fg", "--color-accent-fg")).toBeCloseTo(6.6, 2);
   });
 
   it("a Sage inteira, como está no CSS, cabe nos pisos", () => {
@@ -338,7 +338,10 @@ describe("reconciliação — quem se move são as NOSSAS semânticas", () => {
     // declarada da paleta (verde/âmbar escuros e a vermillion caem no mesmo canal sob
     // protanopia), e é exatamente o que faz este controle positivo disparar: se o
     // mecanismo não movesse nada aqui, não moveria em lugar nenhum.
-    const accentClaro = REGUA.rampaDoProduto[6]!;
+    // Fork Nexora: o accent do produto virou indigo (#5b3fd6), que NÃO colide com
+    // semântica nenhuma (medido 2026-11-10: zero movimentos). O controle positivo
+    // segue com a vermillion como marca de CLIENTE — é ela que sabidamente colide.
+    const accentClaro = "#e42b0c";
     for (const nome of ["success", "warning"] as const) {
       const hex = REGUA.claro.semanticas.find((s) => s.nome === nome)!.hex;
       expect(deltaESimulado(hex, accentClaro), nome).toBeLessThan(PISO_DE_SEPARACAO_SIMULADA);
@@ -414,7 +417,9 @@ describe("reconciliação — quem se move são as NOSSAS semânticas", () => {
     // escuras e mais separadas entre si, então menos marcas de cliente as empurram.
     // Quem move hoje: as 4 acromáticas (2 cada, porque herdam a vermillion), `#dc2626`,
     // `#e11d48` e `#506d48` (3 cada).
-    expect(movimentosNoRun).toBe(17);
+    // Fork Nexora (2026-11-10): 9 com o accent indigo — as acromáticas herdam o
+    // accent do produto, e o indigo não colide com as semânticas como a vermillion.
+    expect(movimentosNoRun).toBe(9);
   });
 });
 
@@ -451,8 +456,8 @@ describe("marca acromática — o accent do produto permanece", () => {
     // aceitar aquele piso. A vermillion folga dos dois; o piso do módulo continua 0,05
     // (`PISO_DE_SEPARACAO_DO_NEUTRO`) porque ele existe para marcas de CLIENTE pouco
     // saturadas, não para o produto.
-    expect(separacaoDoNeutro(REGUA.claro, marca.claro.grauDoAccent, marca.claro.accent)).toBeCloseTo(0.2354, 4);
-    expect(separacaoDoNeutro(REGUA.escuro, marca.escuro.grauDoAccent, marca.escuro.accent)).toBeCloseTo(0.1789, 4);
+    expect(separacaoDoNeutro(REGUA.claro, marca.claro.grauDoAccent, marca.claro.accent)).toBeCloseTo(0.2182, 4);
+    expect(separacaoDoNeutro(REGUA.escuro, marca.escuro.grauDoAccent, marca.escuro.accent)).toBeCloseTo(0.1857, 4);
 
     // Controle negativo: um accent cinza reprovaria as duas guardas. Sem esta linha, os
     // pisos acima poderiam ser satisfeitos por qualquer coisa.

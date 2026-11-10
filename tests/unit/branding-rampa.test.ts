@@ -111,16 +111,18 @@ describe("rampaDeSemente — catraca de calibração contra o design system", ()
     expect(esperados).toHaveLength(11);
     expect(new Set(esperados).size).toBe(11);
     // Vermillion Signal — o 600 canônico do deck Orderful (app/globals.css).
-    expect(esperados[K]).toBe("#e42b0c");
+    expect(esperados[K]).toBe("#5b3fd6"); // Nexora Indigo (fork)
   });
 
-  // DESATIVADA POR DECISÃO DO CTO (2026-09-09, MIGRATION_V117_TRACKER.md): a rampa
+  // REATIVADA no fork Nexora (2026-11-10): a rampa do produto agora É
+  // `rampaDeSemente("#5b3fd6")`, então a catraca volta a valer para ela também.
+  // Histórico — DESATIVADA POR DECISÃO DO CTO (2026-09-09, MIGRATION_V117_TRACKER.md): a rampa
   // vermillion do produto é DESENHADA À MÃO (Orderful) e não é reproduzível por
   // `rampaDeSemente` — medido: Δ até 21/255 nas paradas 400 e 500. A catraca
   // continua valendo para a marca do REVENDEDOR (que é derivada), não para a
   // do produto. O design premium manual vence a automação.
-  it.skip("reproduz os 11 stops do produto a partir da semente com Δ ≤ 2/255 por canal", () => {
-    const derivada = rampaDeSemente("#e42b0c");
+  it("reproduz os 11 stops do produto a partir da semente com Δ ≤ 2/255 por canal", () => {
+    const derivada = rampaDeSemente("#5b3fd6");
     const distancias = esperados.map((esperado, i) => distanciaPorCanal(esperado, derivada[i]!));
     expect(
       Math.max(...distancias),

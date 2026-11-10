@@ -47,6 +47,6 @@ export const SIMBOLO = {
  * 600 no claro, 400 no escuro, a mesma subida de parada da régua).
  */
 export const CORES_DA_MARCA = {
-  claro: { simbolo: "#101828", modulo: "#e42b0c", nome: "#101828" },
-  escuro: { simbolo: "#f5f5f5", modulo: "#f2704e", nome: "#f5f5f5" },
+  claro: { simbolo: "#101828", modulo: "#5b3fd6", nome: "#101828" },
+  escuro: { simbolo: "#f5f5f5", modulo: "#8980ff", nome: "#f5f5f5" },
 } as const;

@@ -28,7 +28,7 @@ type Props = {
 };
 
 const SIMBOLO_CLARO_ESCURO = "fill-[#101828] dark:fill-[#f5f5f5]";
-const MODULO_CLARO_ESCURO = "fill-[#e42b0c] dark:fill-[#f2704e]";
+const MODULO_CLARO_ESCURO = "fill-[#5b3fd6] dark:fill-[#8980ff]";
 // O nome é texto (não caminho): quem o pinta é o token `text-text`, que vale
 // exatamente estes hexes nos dois temas; o par `fill-*` é o contrato da régua da
 // paleta (`marca-do-produto.test.tsx`), que lê uma convenção só.
