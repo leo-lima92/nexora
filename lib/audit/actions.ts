@@ -940,6 +940,15 @@ export const AUDIT_ACTIONS = [
    */
   "ai.case_chat_asked",
   /**
+   * FORK NEXORA — um turno do Copiloto (`POST /api/v1/ask-ai`), respondido ou
+   * não. Leva o `llm_call_id` (a linha de custo), as ferramentas usadas e os
+   * funis criados — cada um com o seu `pipeline.created` também.
+   *
+   * ⚠️ SEM O TEXTO da conversa, pelo mesmo motivo de `ai.case_chat_asked`:
+   * o que entra em `api_audit_log` não sai pela cascata de LGPD.
+   */
+  "ai.copiloto_turn",
+  /**
    * O aviso de caso no WhatsApp da equipe (migration 0292).
    *
    * Três códigos e não um: "saiu", "não saiu em definitivo" e "alguém mudou a

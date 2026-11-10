@@ -249,6 +249,21 @@ export const PONTOS_DE_IA: readonly PontoDeIa[] = [
     registraEm: "llm_calls",
   },
   {
+    // FORK NEXORA — o Copiloto (`components/ask-ai/AskAI.tsx` → `POST /api/v1/ask-ai`).
+    // `tools: true` porque ele lê e CRIA funil por ferramenta: um modelo sem tool
+    // calling escolhido aqui conversaria e prometeria, mas nada nasceria no banco.
+    id: "copiloto_setup",
+    rotulo: "Copiloto de configuração",
+    oQueFaz:
+      "Conversa com quem administra a operação para montar funis, desenhar automações e follow-ups e escrever as instruções dos agentes SDR. Lê os funis da organização e cria um funil novo quando a pessoa confirma.",
+    papel: "melhorar",
+    exige: { tools: true },
+    emissor: "lib/copiloto/turno.ts",
+    sintomaDeFalha:
+      "O painel do Copiloto mostra um aviso no lugar da resposta, e nenhum funil é criado.",
+    registraEm: "llm_calls",
+  },
+  {
     id: "draft_suggestion",
     rotulo: "Sugerir resposta ao atendente",
     oQueFaz:

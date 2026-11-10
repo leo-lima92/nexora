@@ -18113,7 +18113,6 @@ export const DICIONARIO: Traducoes = {
   Copiloto: { es: "Copiloto" },
   "Abrir o copiloto": { es: "Abrir el copiloto" },
   "Fechar o copiloto": { es: "Cerrar el copiloto" },
-  Prévia: { es: "Vista previa" },
   "Ajuda para configurar a plataforma: funis, automações e agentes SDR.": {
     es: "Ayuda para configurar la plataforma: embudos, automatizaciones y agentes SDR.",
   },
@@ -18121,28 +18120,53 @@ export const DICIONARIO: Traducoes = {
   "Olá! Eu ajudo a configurar a plataforma. O que você quer montar hoje?": {
     es: "¡Hola! Te ayudo a configurar la plataforma. ¿Qué quieres armar hoy?",
   },
-  "Quero um funil para a minha clínica, com um agente SDR que qualifica os pacientes.": {
-    es: "Quiero un embudo para mi clínica, con un agente SDR que califique a los pacientes.",
-  },
-  "Ótimo. Eu proporia três passos:": { es: "Perfecto. Te propondría tres pasos:" },
-  "Criar o funil com as etapas Novo contato, Qualificado, Agendado e Compareceu.": {
-    es: "Crear el embudo con las etapas Nuevo contacto, Calificado, Agendado y Asistió.",
-  },
-  "Montar uma automação que move o card quando o horário é marcado.": {
-    es: "Armar una automatización que mueva la tarjeta cuando se agenda el horario.",
-  },
-  "Configurar o agente SDR com as perguntas de qualificação da clínica.": {
-    es: "Configurar el agente SDR con las preguntas de calificación de la clínica.",
-  },
-  "Quer que eu comece pelo funil?": { es: "¿Quieres que empiece por el embudo?" },
   Sugestões: { es: "Sugerencias" },
   "Criar um funil": { es: "Crear un embudo" },
   "Montar uma automação": { es: "Armar una automatización" },
   "Configurar um agente SDR": { es: "Configurar un agente SDR" },
   "Mensagem para o copiloto": { es: "Mensaje para el copiloto" },
   "Escreva o que você quer configurar…": { es: "Escribe lo que quieres configurar…" },
-  "Esta é uma prévia da interface: o copiloto ainda não responde.": {
-    es: "Esta es una vista previa de la interfaz: el copiloto todavía no responde.",
+  "Consultando seus funis…": {
+    es: "Consultando tus embudos…",
+  },
+  "Criando o funil…": {
+    es: "Creando el embudo…",
+  },
+  "Abrir o quadro": {
+    es: "Abrir el tablero",
+  },
+  "O Copiloto não conseguiu responder agora. Tente de novo em instantes.": {
+    es: "El Copiloto no pudo responder ahora. Inténtalo de nuevo en unos instantes.",
+  },
+  "A conexão com o Copiloto caiu antes da resposta. Tente de novo.": {
+    es: "La conexión con el Copiloto se cortó antes de la respuesta. Inténtalo de nuevo.",
+  },
+  "O Copiloto pode criar funis na sua organização, sempre depois de você confirmar. O uso conta no consumo de IA da empresa.": {
+    es: "El Copiloto puede crear embudos en tu organización, siempre después de que confirmes. El uso cuenta en el consumo de IA de la empresa.",
+  },
+  "Não entendi a mensagem enviada ao Copiloto.": {
+    es: "No entendí el mensaje enviado al Copiloto.",
+  },
+  "O Copiloto está indisponível nesta instalação (configuração).": {
+    es: "El Copiloto no está disponible en esta instalación (configuración).",
+  },
+  "Pronto. Se quiser, eu explico o que fiz ou seguimos para o próximo passo.": {
+    es: "Listo. Si quieres, te explico lo que hice o seguimos con el próximo paso.",
+  },
+  "O uso de IA incluído no plano acabou neste mês. Troque de plano em Configurações › Plano e cobrança, cadastre uma chave de IA própria ou aguarde o próximo mês.": {
+    es: "El uso de IA incluido en el plan se agotó este mes. Cambia de plan en Configuración › Plan y cobro, registra una clave de IA propia o espera al próximo mes.",
+  },
+  "O Copiloto não conseguiu responder agora. Tente de novo; se continuar, mande este código para quem instalou o sistema.": {
+    es: "El Copiloto no pudo responder ahora. Inténtalo de nuevo; si continúa, envía este código a quien instaló el sistema.",
+  },
+  "Copiloto de configuração": {
+    es: "Copiloto de configuración",
+  },
+  "Conversa com quem administra a operação para montar funis, desenhar automações e follow-ups e escrever as instruções dos agentes SDR. Lê os funis da organização e cria um funil novo quando a pessoa confirma.": {
+    es: "Conversa con quien administra la operación para armar embudos, diseñar automatizaciones y seguimientos y escribir las instrucciones de los agentes SDR. Lee los embudos de la organización y crea un embudo nuevo cuando la persona confirma.",
+  },
+  "O painel do Copiloto mostra um aviso no lugar da resposta, e nenhum funil é criado.": {
+    es: "El panel del Copiloto muestra un aviso en lugar de la respuesta, y no se crea ningún embudo.",
   },
 };
 

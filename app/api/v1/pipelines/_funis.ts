@@ -28,25 +28,12 @@ import type { createClient } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-/** `position` entra: a reordenação calcula em cima dela. */
-const COLUNAS =
-  "id, name, slug, description, position, is_default, is_client_pipeline, is_archived";
-
 /**
- * Os funis da organização, na ordem da lista, arquivados inclusive.
- *
- * O filtro explícito de `organization_id` é a convenção do repo e a rede que
- * sobra se a policy mudar — a RLS já vale porque o client é o do usuário.
+ * Os funis da organização, na ordem da lista, arquivados inclusive. A função
+ * mora em `lib/pipelines/ler-funis.ts` desde que a criação de funil virou
+ * operação compartilhada com o Copiloto; o reexport mantém as rotas como estavam.
  */
-export async function lerFunis(supabase: Supabase, orgId: string): Promise<FunilEditavel[]> {
-  const { data, error } = await supabase
-    .from("crm_pipelines")
-    .select(COLUNAS)
-    .eq("organization_id", orgId)
-    .order("position", { ascending: true });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as FunilEditavel[];
-}
+export { lerFunis } from "@/lib/pipelines/ler-funis";
 
 /**
  * O que amarra o funil ao resto do sistema.
