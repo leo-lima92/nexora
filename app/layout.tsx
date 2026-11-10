@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
 import localFont from "next/font/local";
 import { headers } from "next/headers";
 import { Toaster } from "sonner";
@@ -33,10 +32,18 @@ import "./globals.css";
  * Archivo — o grotesco de trabalho do deck Orderful (docs/DESIGN_SYSTEM.md §2).
  * Inter, Roboto, Open Sans, Geist e Space Grotesk são BANIDAS por doutrina; o
  * fallback do `--font-sans` (app/globals.css) cai direto no `system-ui`.
+ *
+ * Carregada de `app/fonts/`, não do Google: o `next build` do CI não pode
+ * depender de rede para fonte — ver `app/fonts/README.md`.
  */
-const archivo = Archivo({
-  subsets: ["latin", "latin-ext"],
-  weight: ["300", "400", "500", "600", "700"],
+const archivo = localFont({
+  src: [
+    { path: "./fonts/archivo-300-latin-latin-ext.woff2", weight: "300", style: "normal" },
+    { path: "./fonts/archivo-400-latin-latin-ext.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/archivo-500-latin-latin-ext.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/archivo-600-latin-latin-ext.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/archivo-700-latin-latin-ext.woff2", weight: "700", style: "normal" },
+  ],
   display: "swap",
   variable: "--font-archivo",
 });

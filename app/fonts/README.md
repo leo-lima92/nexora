@@ -12,6 +12,7 @@ que o `next/font/google` baixava.
 
 | Arquivo | Família | Pesos | Cobertura | Origem (fonts.gstatic.com) |
 |---|---|---|---|---|
+| `archivo-{300,400,500,600,700}-latin-latin-ext.woff2` | Archivo | 300, 400, 500, 600, 700 | latin + latin-ext | `archivo/v25` |
 | `atkinson-hyperlegible-{400,700}-latin-latin-ext.woff2` | Atkinson Hyperlegible | 400, 700 | latin + latin-ext | `atkinsonhyperlegible/v12` |
 | `ibm-plex-mono-{400,500}-latin-latin-ext.woff2` | IBM Plex Mono | 400, 500 | latin + latin-ext | `ibmplexmono/v20` |
 | `bricolage-grotesque-200-800-latin.woff2` | Bricolage Grotesque | variável 200–800 | latin | `bricolagegrotesque/v9` |
@@ -33,13 +34,13 @@ UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, l
 curl -sA "$UA" 'https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap'
 ```
 
-As duas de latin + latin-ext vêm num arquivo só por peso: a API CSS antiga,
+As de latin + latin-ext vêm num arquivo só por peso: a API CSS antiga,
 com um User-Agent sem suporte a `unicode-range`, devolve um `woff2` com os dois
 subsets juntos (e sem hinting, como o do Chrome):
 
 ```bash
 UA='Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:40.0) Gecko/20100101 Firefox/40.0'
-curl -sA "$UA" 'https://fonts.googleapis.com/css?family=Atkinson+Hyperlegible:400,700|IBM+Plex+Mono:400,500&subset=latin,latin-ext&display=swap'
+curl -sA "$UA" 'https://fonts.googleapis.com/css?family=Archivo:300,400,500,600,700|Atkinson+Hyperlegible:400,700|IBM+Plex+Mono:400,500&subset=latin,latin-ext&display=swap'
 ```
 
 ## Licença
