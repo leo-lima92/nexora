@@ -4052,3 +4052,41 @@ terão trace/vídeo. Não foi medido download na janela anterior à persistênci
 do worker, viewer PDF ou aplicativo externo. O PASS de UX deste head não
 substitui os cinco checks obrigatórios: o verify antigo falhou no teste de
 relógio, cujo reparo central entra pela composição da main, sem repetir a rodada antiga.
+
+## Fork Nexora — Copiloto (Ask AI) e Tráfego Agêntico `[P1]` (2026-11-11)
+
+**Copiloto, Ask AI** (`copiloto-ask-ai.spec.ts`, stream simulado no navegador): o
+painel mostra que está pensando, depois a resposta, a ferramenta chamada e o funil
+criado — `evidence/copiloto-ask-ai/01-pensando.png`, `evidence/copiloto-ask-ai/02-resposta.png`,
+`evidence/copiloto-ask-ai/03-ferramenta.png`, `evidence/copiloto-ask-ai/04-funil-criado.png`. A mesma
+sequência dirigida pelo Playwright MCP: `evidence/copiloto-ask-ai/mcp-01-resposta.png`,
+`evidence/copiloto-ask-ai/mcp-02-pensando.png`, `evidence/copiloto-ask-ai/mcp-03-ferramenta.png`,
+`evidence/copiloto-ask-ai/mcp-04-funil-criado.png`.
+
+**Tráfego Agêntico, Fase 5A — só o despacho** (tela `/app/aios`, `manager`+): enviando,
+entregue ao motor e motor fora do ar, pela spec — `evidence/trafego-aios/01-enviando.png`,
+`evidence/trafego-aios/02-entregue.png`, `evidence/trafego-aios/03-motor-fora-do-ar.png` — e pelo
+Playwright MCP — `evidence/trafego-aios/mcp-01-tela.png`, `evidence/trafego-aios/mcp-02-enviando.png`,
+`evidence/trafego-aios/mcp-03-entregue.png`, `evidence/trafego-aios/mcp-04-motor-fora-do-ar.png`.
+
+**Tráfego Agêntico, Fase 5B — o retorno do motor pelo banco** (migration 9902,
+`aios_campaign_requests`). A spec `trafego-aios.spec.ts` prende o contrato da TELA com a
+rota (rota simulada; 3/3 verdes em 2026-11-11, Chrome do sistema):
+`evidence/trafego-aios-retorno/01-enviando.png`, `evidence/trafego-aios-retorno/02-na-fila-do-motor.png`,
+`evidence/trafego-aios-retorno/03-resposta-do-motor.png`, `evidence/trafego-aios-retorno/04-historico.png`,
+`evidence/trafego-aios-retorno/05-motor-fora-do-ar.png`.
+
+Prova com **banco real**, sem nada simulado no CRM (2026-11-11, Playwright MCP): `next start`
+de produção contra o Supabase local com a 9902 aplicada, usuário `manager` do seed E2E, tela
+aberta pelo item do menu, e um receptor HTTP em `:8000` no lugar do motor Python. O pedido
+digitado virou linha `queued` com `engine_job_id` do aceite, e o receptor recebeu o mesmo
+`request_id`, com organização e pessoa vindas da sessão —
+`evidence/trafego-aios-retorno/mcp-01-na-fila-banco-real.png`. Em seguida o "motor" gravou
+`processing` e `completed` pela REST com a service key (caminho da §6.2 de
+`docs/AIOS_PYTHON_CONTRACT.md`), e a tela trouxe a resposta sozinha, sem clique, na lista
+(Concluído) e na conversa — `evidence/trafego-aios-retorno/mcp-02-concluido-banco-real.png`. Ao
+recarregar, o histórico continua lá — `evidence/trafego-aios-retorno/mcp-03-historico-apos-recarregar.png`.
+
+Não medido: o motor Python de verdade (ainda não grava na tabela), Realtime (a tela consulta
+por intervalo; o serviço de Realtime local estava desligado), e a ausência de vencimento para
+pedido parado em `queued`/`processing` (sem cron, decisão em aberto com o lado Python).
