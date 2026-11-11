@@ -2238,6 +2238,60 @@ export type Database = {
           },
         ];
       };
+      aios_campaign_requests: {
+        Row: {
+          campaign_metadata: NonNullable<Json>;
+          created_at: string;
+          engine_job_id: string | null;
+          error_message: string | null;
+          id: string;
+          organization_id: string;
+          prompt: string;
+          request_id: string;
+          response_summary: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          campaign_metadata?: NonNullable<Json>;
+          created_at?: string;
+          engine_job_id?: string | null;
+          error_message?: string | null;
+          id?: string;
+          organization_id: string;
+          prompt: string;
+          request_id: string;
+          response_summary?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          campaign_metadata?: NonNullable<Json>;
+          created_at?: string;
+          engine_job_id?: string | null;
+          error_message?: string | null;
+          id?: string;
+          organization_id?: string;
+          prompt?: string;
+          request_id?: string;
+          response_summary?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "aios_campaign_requests_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       api_audit_log: {
         Row: {
           acting_as_platform_admin: boolean;

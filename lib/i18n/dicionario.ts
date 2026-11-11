@@ -18219,15 +18219,6 @@ export const DICIONARIO: Traducoes = {
   "O CRM entrega o pedido ao motor de tráfego (AIOS), que roda fora daqui.": {
     es: "El CRM entrega el pedido al motor de tráfico (AIOS), que funciona fuera de aquí.",
   },
-  "O motor monta a campanha do lado dele. O resultado ainda não aparece nesta tela.": {
-    es: "El motor arma la campaña por su lado. El resultado todavía no aparece en esta pantalla.",
-  },
-  "Pedidos desta sessão": {
-    es: "Pedidos de esta sesión",
-  },
-  "A lista recomeça quando a página é recarregada.": {
-    es: "La lista vuelve a empezar cuando se recarga la página.",
-  },
   "Nenhum pedido enviado ainda.": {
     es: "Todavía no se envió ningún pedido.",
   },
@@ -18263,6 +18254,54 @@ export const DICIONARIO: Traducoes = {
   },
   "Não consegui falar com o motor de tráfego. Tente de novo em instantes; se continuar, avise quem instalou o sistema.": {
     es: "No pude comunicarme con el motor de tráfico. Inténtalo de nuevo en unos instantes; si continúa, avisa a quien instaló el sistema.",
+  },
+
+  // FORK NEXORA — Fase 5B: o histórico de pedidos e a resposta do motor
+  // (`aios_campaign_requests`), na tela e nas rotas GET/POST do despacho.
+  "O motor monta a campanha do lado dele. Quando termina, a resposta aparece em Pedidos e nesta conversa.": {
+    es: "El motor arma la campaña por su lado. Cuando termina, la respuesta aparece en Pedidos y en esta conversación.",
+  },
+  "Os pedidos da sua empresa e a resposta do motor de tráfego. A lista se atualiza sozinha enquanto houver pedido em aberto.": {
+    es: "Los pedidos de tu empresa y la respuesta del motor de tráfico. La lista se actualiza sola mientras haya algún pedido abierto.",
+  },
+  "Não consegui carregar os pedidos. Toque em Atualizar para tentar de novo.": {
+    es: "No pude cargar los pedidos. Toca Actualizar para intentarlo de nuevo.",
+  },
+  "Carregando pedidos…": {
+    es: "Cargando pedidos…",
+  },
+  "Agora": {
+    es: "Ahora",
+  },
+  "Na fila do motor": {
+    es: "En la cola del motor",
+  },
+  "O motor não confirmou o recebimento. Se ele recebeu o pedido, a resposta aparece aqui.": {
+    es: "El motor no confirmó la recepción. Si recibió el pedido, la respuesta aparece aquí.",
+  },
+  "Ver pedidos mais antigos": {
+    es: "Ver pedidos más antiguos",
+  },
+  "Resposta do motor": {
+    es: "Respuesta del motor",
+  },
+  "Ver resposta completa": {
+    es: "Ver la respuesta completa",
+  },
+  "O motor de tráfego concluiu o pedido, sem enviar um resumo.": {
+    es: "El motor de tráfico concluyó el pedido, sin enviar un resumen.",
+  },
+  "O motor de tráfego não conseguiu concluir este pedido.": {
+    es: "El motor de tráfico no pudo concluir este pedido.",
+  },
+  "Este pedido já foi registrado. Confira a lista de pedidos antes de enviar de novo.": {
+    es: "Este pedido ya fue registrado. Revisa la lista de pedidos antes de enviarlo de nuevo.",
+  },
+  "Não consegui registrar o pedido, e nada foi enviado ao motor de tráfego. Tente de novo em instantes.": {
+    es: "No pude registrar el pedido, y no se envió nada al motor de tráfico. Inténtalo de nuevo en unos instantes.",
+  },
+  "Não consegui carregar os pedidos. Tente de novo em instantes.": {
+    es: "No pude cargar los pedidos. Inténtalo de nuevo en unos instantes.",
   },
 };
 

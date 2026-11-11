@@ -49,6 +49,15 @@ const PARES: Array<{
   simbolo: string;
 }> = [
   {
+    // FORK NEXORA (migration 9902). O motor AIOS (Python) escreve esta coluna com
+    // a service key: um estado novo que nasça só no banco chegaria à tela como
+    // selo vazio, e um que nasça só no TypeScript seria 23514 para o motor.
+    tabela: "aios_campaign_requests",
+    coluna: "status",
+    arquivo: "lib/aios/pedidos.ts",
+    simbolo: "STATUS_DO_PEDIDO_AIOS",
+  },
+  {
     tabela: "ad_platform_connections",
     coluna: "google_api",
     arquivo: "lib/plataformas-de-anuncio/types.ts",

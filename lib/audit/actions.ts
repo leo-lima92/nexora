@@ -954,11 +954,18 @@ export const AUDIT_ACTIONS = [
    * monta a campanha, e esta linha é o que prova quem pediu, quando e com que
    * `request_id` — o mesmo que vai no cabeçalho para o motor.
    *
+   * `resource_id` é a linha do pedido em `aios_campaign_requests` (migration
+   * 9902), e `metadata.pedido_request_id` é o id do PEDIDO — o que vai no corpo
+   * para o motor e pelo qual ele devolve a resposta. São dois ids: o
+   * `request_id` desta linha de audit é o da chamada HTTP.
+   *
    * `confirmado: false` é o caso em que o motor não respondeu no prazo: o pedido
    * pode ter chegado, e é justamente essa dúvida que precisa ficar registrada.
-   * Pedido que o motor recusou ou que não saiu do CRM não audita (não houve efeito).
+   * Pedido que o motor recusou ou que não saiu do CRM não audita (não houve
+   * efeito fora do CRM) — a tentativa fica na própria linha do pedido, `failed`.
    *
-   * ⚠️ SEM O TEXTO do pedido, pelo mesmo motivo de `ai.copiloto_turn`.
+   * ⚠️ SEM O TEXTO do pedido, pelo mesmo motivo de `ai.copiloto_turn`. O texto
+   * mora só na linha do pedido.
    */
   "aios.campaign_dispatched",
   /**

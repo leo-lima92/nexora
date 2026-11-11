@@ -3,7 +3,8 @@
 // FORK NEXORA — O DESPACHO PARA O MOTOR AIOS (`lib/aios/despacho.ts`) ─────────
 //
 // O que este arquivo mede é o que SAI do CRM e como a resposta é lida:
-//  - o corpo tem exatamente os quatro campos do contrato, e mais nenhum;
+//  - o corpo tem exatamente os cinco campos do contrato, e mais nenhum — o
+//    `request_id` é a chave da linha do pedido, por onde o motor devolve a resposta;
 //  - o endereço vem de `AIOS_PYTHON_URL`, cai no provisório quando vazia, e um
 //    valor que não é endereço NÃO cai no provisório em silêncio;
 //  - o token só vai quando existe, e o redirect não é seguido;
@@ -24,7 +25,13 @@ import {
 
 const ORG = "22222222-2222-4222-8222-222222222222";
 const USER = "11111111-1111-4111-8111-111111111111";
-const pedido = { orgId: ORG, userId: USER, prompt: "Campanha de leads para clínica", requestId: "req-1" };
+const pedido = {
+  orgId: ORG,
+  userId: USER,
+  prompt: "Campanha de leads para clínica",
+  pedidoId: "pedido-0001",
+  requestId: "req-1",
+};
 
 const fetchDuble = vi.fn();
 
@@ -65,7 +72,7 @@ describe("urlDoAios", () => {
 });
 
 describe("despacharParaOAios — o que sai", () => {
-  it("POST com exatamente org_id, user_id, prompt e action", async () => {
+  it("POST com exatamente org_id, user_id, request_id, prompt e action", async () => {
     fetchDuble.mockResolvedValue(json({}));
     await despacharParaOAios(pedido);
 
@@ -76,6 +83,7 @@ describe("despacharParaOAios — o que sai", () => {
     expect(JSON.parse(init.body as string)).toEqual({
       org_id: ORG,
       user_id: USER,
+      request_id: "pedido-0001",
       prompt: "Campanha de leads para clínica",
       action: "generate_campaign",
     });

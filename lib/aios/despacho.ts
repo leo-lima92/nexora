@@ -4,9 +4,10 @@
  * ─── A fronteira ────────────────────────────────────────────────────────────
  *
  * O Nexora é só o DISPARADOR: recebe o pedido da pessoa na tela `/app/aios`,
- * confere quem ela é e manda o pedido ao AIOS por HTTP. Quem monta a campanha é
- * o motor. O resultado NÃO volta por esta chamada — o motor grava no Supabase e
- * o CRM o lê de lá (a leitura é a próxima fase; nada aqui a simula).
+ * confere quem ela é, registra o pedido e o manda ao AIOS por HTTP. Quem monta a
+ * campanha é o motor. O resultado NÃO volta por esta chamada — o motor grava na
+ * linha do pedido (`public.aios_campaign_requests`, migration 9902) e o CRM o
+ * lê de lá. O contrato com o lado Python: `docs/AIOS_PYTHON_CONTRACT.md`.
  *
  * É o mesmo corte de `lib/nexora/fronteira-meta-ads.ts`, visto pelo outro lado:
  * lá o CRM deixa de falar com a Meta; aqui ele ganha a porta para falar com
@@ -14,12 +15,15 @@
  *
  * ─── O que sai daqui ────────────────────────────────────────────────────────
  *
- * Um POST com exatamente quatro campos (`CorpoDoDespacho`). `org_id` e
+ * Um POST com exatamente cinco campos (`CorpoDoDespacho`). `org_id` e
  * `user_id` vêm de quem chama esta função — a rota os tira da SESSÃO, nunca do
- * corpo que o navegador mandou.
+ * corpo que o navegador mandou. `request_id` é a chave da linha do pedido: é
+ * com `(organization_id = org_id, request_id)` que o motor acha onde gravar a
+ * resposta.
  *
- * Dois cabeçalhos acompanham: `X-Request-Id` (o mesmo que vai para o
- * `api_audit_log`, para o motor conseguir casar o log dele com o nosso) e, só
+ * Dois cabeçalhos acompanham: `X-Request-Id` (o id da CHAMADA HTTP, o mesmo que
+ * vai para o `api_audit_log`, para o motor conseguir casar o log dele com o
+ * nosso — não confundir com o `request_id` do corpo, que é o id do PEDIDO) e, só
  * quando `AIOS_PYTHON_TOKEN` está preenchida, `Authorization: Bearer`. Sem o
  * token o motor não tem como distinguir o CRM de qualquer outro processo que
  * alcance a porta dele — por isso ele existe desde já, opcional enquanto os
@@ -55,6 +59,8 @@ const MENSAGEM_MAX = 4000;
 export interface CorpoDoDespacho {
   org_id: string;
   user_id: string;
+  /** `aios_campaign_requests.request_id` — a chave que o motor usa para gravar a resposta. */
+  request_id: string;
   prompt: string;
   action: typeof ACAO_GERAR_CAMPANHA;
 }
@@ -63,6 +69,9 @@ export interface PedidoDeDespacho {
   orgId: string;
   userId: string;
   prompt: string;
+  /** O id do PEDIDO (`aios_campaign_requests.request_id`). Vai no corpo. */
+  pedidoId: string;
+  /** O id da CHAMADA HTTP (audit). Vai no cabeçalho `X-Request-Id`. */
   requestId: string;
 }
 
@@ -123,6 +132,7 @@ export async function despacharParaOAios(pedido: PedidoDeDespacho): Promise<Resu
   const corpo: CorpoDoDespacho = {
     org_id: pedido.orgId,
     user_id: pedido.userId,
+    request_id: pedido.pedidoId,
     prompt: pedido.prompt,
     action: ACAO_GERAR_CAMPANHA,
   };

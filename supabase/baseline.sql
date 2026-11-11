@@ -66627,3 +66627,99 @@ comment on column public.crm_leads.meta_adset_id is
   'GERADA de source_metadata.adset_id (migration 9901), nula quando o clique é do Google (gclid sem fbclid/fbc). Entrada: adset_id no corpo, nunca em stage.';
 comment on column public.crm_leads.meta_ad_id is
   'GERADA de source_metadata.ad_id (migration 9901), nula quando o clique é do Google (gclid sem fbclid/fbc). Entrada: ad_id no corpo, nunca em stage.';
+
+-- ---- o pedido de campanha vira linha, e a resposta do motor volta por ela (migration 9902) ----
+-- FORK NEXORA. `aios_campaign_requests`: o CRM insere o pedido da tela /app/aios
+-- (queued) e marca o desfecho do despacho; o motor AIOS completa com a service
+-- key. RLS exige `manager` para ler e inserir; sem UPDATE/DELETE para
+-- `authenticated`; `anon` sem privilégio. O porquê inteiro está no cabeçalho da
+-- migration; o contrato com o lado Python, em docs/AIOS_PYTHON_CONTRACT.md.
+create table if not exists public.aios_campaign_requests (
+  id uuid primary key default uuid_generate_v4(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete restrict,
+  request_id text not null
+    constraint aios_campaign_requests_request_id_tamanho
+      check (char_length(request_id) between 8 and 100),
+  prompt text not null
+    constraint aios_campaign_requests_prompt_preenchido
+      check (btrim(prompt) <> ''),
+  status text not null default 'queued'
+    constraint aios_campaign_requests_status_check
+      check (status in ('queued', 'processing', 'completed', 'failed', 'unconfirmed')),
+  engine_job_id text
+    constraint aios_campaign_requests_engine_job_id_tamanho
+      check (engine_job_id is null or char_length(engine_job_id) <= 200),
+  response_summary text
+    constraint aios_campaign_requests_response_summary_tamanho
+      check (response_summary is null or char_length(response_summary) <= 20000),
+  campaign_metadata jsonb not null default '{}'::jsonb
+    constraint aios_campaign_requests_campaign_metadata_objeto
+      check (jsonb_typeof(campaign_metadata) = 'object'
+             and octet_length(campaign_metadata::text) <= 65536),
+  error_message text
+    constraint aios_campaign_requests_error_message_tamanho
+      check (error_message is null or char_length(error_message) <= 2000),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint aios_campaign_requests_org_request_id_key unique (organization_id, request_id)
+);
+
+-- A listagem da tela: os pedidos da organização, do mais novo para o mais
+-- antigo, com `id` como desempate do cursor.
+create index if not exists aios_campaign_requests_org_criado_idx
+  on public.aios_campaign_requests (organization_id, created_at desc, id desc);
+
+-- A FK de `user_id` é RESTRICT: sem índice, cada remoção de login varreria a
+-- tabela inteira para conferir se a pessoa tem pedido.
+create index if not exists aios_campaign_requests_user_idx
+  on public.aios_campaign_requests (user_id);
+
+comment on table public.aios_campaign_requests is
+  'FORK NEXORA (migration 9902) — pedidos de campanha despachados ao motor de tráfego (AIOS) pela tela /app/aios, e o retorno do motor. O CRM insere (queued) e marca o desfecho do despacho; o motor completa com a service key. Contrato: docs/AIOS_PYTHON_CONTRACT.md.';
+comment on column public.aios_campaign_requests.request_id is
+  'Id do pedido gerado na tela (ou pela rota, quando ausente). Único por organização; é a chave que o motor usa para achar a linha e vai no campo request_id do corpo do despacho.';
+comment on column public.aios_campaign_requests.status is
+  'queued = registrado e à espera do motor; unconfirmed = o motor não confirmou o recebimento no prazo (pode ter chegado); processing = o motor está montando; completed = terminou (response_summary); failed = não deu (error_message). Vocabulário espelhado em lib/aios/pedidos.ts.';
+comment on column public.aios_campaign_requests.engine_job_id is
+  'Protocolo do motor. O CRM grava o que vier no aceite do despacho; o motor pode gravar/corrigir.';
+comment on column public.aios_campaign_requests.response_summary is
+  'Resposta do motor, em texto, mostrada como está na tela. Só o motor escreve (service key). Teto de 20.000 caracteres.';
+comment on column public.aios_campaign_requests.campaign_metadata is
+  'Objeto JSON livre do motor (ids de campanha, verba, links). A tela não lê caminho nenhum daqui. Teto de 64 KB.';
+comment on column public.aios_campaign_requests.error_message is
+  'Por que falhou, em texto para a pessoa. O CRM escreve quando o despacho não é aceito; o motor escreve quando a campanha falha. Teto de 2.000 caracteres.';
+
+drop trigger if exists trg_aios_campaign_requests_updated_at on public.aios_campaign_requests;
+create trigger trg_aios_campaign_requests_updated_at
+  before update on public.aios_campaign_requests
+  for each row execute function public.fn_set_updated_at();
+
+alter table public.aios_campaign_requests enable row level security;
+
+drop policy if exists aios_campaign_requests_manager_read on public.aios_campaign_requests;
+create policy aios_campaign_requests_manager_read on public.aios_campaign_requests
+  for select
+  using (
+    public.fn_is_platform_admin()
+    or ((organization_id in (select public.fn_user_org_ids()))
+        and public.fn_role_at_least(organization_id, 'manager'))
+  );
+
+drop policy if exists aios_campaign_requests_manager_insert on public.aios_campaign_requests;
+create policy aios_campaign_requests_manager_insert on public.aios_campaign_requests
+  for insert
+  with check (
+    (organization_id in (select public.fn_user_org_ids()))
+    and public.fn_role_at_least(organization_id, 'manager')
+    and user_id = (select auth.uid())
+    and status = 'queued'
+    and engine_job_id is null
+    and response_summary is null
+    and error_message is null
+    and campaign_metadata = '{}'::jsonb
+  );
+
+revoke all on table public.aios_campaign_requests from public, anon, authenticated, service_role;
+grant select, insert on table public.aios_campaign_requests to authenticated;
+grant select, insert, update, delete on table public.aios_campaign_requests to service_role;

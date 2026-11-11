@@ -3,8 +3,10 @@
  *
  * O contexto de anúncios não mora no CRM (`lib/nexora/fronteira-meta-ads.ts`):
  * quem fala com a Meta e monta campanha é o motor AIOS, fora daqui. Esta tela é
- * onde a pessoa PEDE a campanha, conversando com o Estrategista de Tráfego; a
- * conversa e o envio estão em `components/aios/EstrategistaDeTrafego.tsx`.
+ * onde a pessoa PEDE a campanha, conversando com o Estrategista de Tráfego, e
+ * onde ela LÊ a resposta: o motor a grava na linha do pedido
+ * (`aios_campaign_requests`) e a tela a busca de lá. A conversa, o envio e o
+ * histórico estão em `components/aios/EstrategistaDeTrafego.tsx`.
  *
  * ─── Por que `manager` ──────────────────────────────────────────────────────
  *
