@@ -802,7 +802,7 @@ export const NAV_CATALOG = [
     // `sidebar: true` não aumenta o menu do fork: a linha de Meta Ads saiu dele
     // (`lib/nexora/fronteira-meta-ads.ts`), e esta ocupa o lugar que sobrou.
     href: "/app/aios",
-    label: "Tráfego AIOS",
+    label: "Tráfego Agêntico",
     description: "Peça campanhas de tráfego pago conversando com o Estrategista de Tráfego.",
     icon: "Megaphone",
     group: "canais",

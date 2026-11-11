@@ -1,10 +1,10 @@
 ---
 impacto: capacidade_nova
 secao: adicionado
-titulo: Tráfego AIOS, a tela para pedir campanhas ao motor de tráfego
+titulo: Tráfego Agêntico, a tela para pedir campanhas ao motor de tráfego
 ---
 
-O menu ganha Tráfego AIOS, em Canais. Nela, gestores e administradores conversam com o Estrategista
+O menu ganha Tráfego Agêntico, em Canais. Nela, gestores e administradores conversam com o Estrategista
 de Tráfego: cada mensagem é um pedido de campanha entregue ao motor de tráfego (AIOS), que roda fora
 do CRM. Enquanto o pedido é entregue a tela mostra "Enviando instruções para o motor de IA…"; quando
 o motor confirma, o pedido aparece como entregue, com a frase e o protocolo que ele devolver. Se o

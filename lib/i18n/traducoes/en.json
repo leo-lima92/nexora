@@ -9457,7 +9457,7 @@
   "Copiloto de configuração": "Setup copilot",
   "Conversa com quem administra a operação para montar funis, desenhar automações e follow-ups e escrever as instruções dos agentes SDR. Lê os funis da organização e cria um funil novo quando a pessoa confirma.": "Talks with whoever runs the operation to build pipelines, design automations and follow-ups, and write instructions for SDR agents. Reads the organization's pipelines and creates a new pipeline when the person confirms.",
   "O painel do Copiloto mostra um aviso no lugar da resposta, e nenhum funil é criado.": "The Copilot panel shows a warning instead of the answer, and no pipeline is created.",
-  "Tráfego AIOS": "AIOS Traffic",
+  "Tráfego Agêntico": "Agentic Traffic",
   "Peça campanhas de tráfego pago conversando com o Estrategista de Tráfego.": "Request paid traffic campaigns by chatting with the Traffic Strategist.",
   "Peça campanhas de tráfego pago conversando. O pedido vai para o motor de tráfego, que cuida dos anúncios fora do CRM.": "Request paid traffic campaigns by chatting. The request goes to the traffic engine, which handles ads outside the CRM.",
   "Estrategista de Tráfego": "Traffic Strategist",

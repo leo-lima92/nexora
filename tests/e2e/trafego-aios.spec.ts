@@ -8,7 +8,7 @@ import { test, expect } from "./helpers/test";
 /**
  * FORK NEXORA — TRÁFEGO AIOS PELA TELA.
  *
- * O que um gestor faz: acha "Tráfego AIOS" no menu lateral, abre a tela, conta
+ * O que um gestor faz: acha "Tráfego Agêntico" no menu lateral, abre a tela, conta
  * ao Estrategista de Tráfego a campanha que quer e aperta Enter. Enquanto o
  * pedido é entregue a conversa diz "Enviando instruções para o motor de IA…";
  * quando o motor confirma, o pedido aparece como entregue, com o protocolo.
@@ -57,13 +57,13 @@ async function entrar(page: Page) {
 async function abrirPeloMenu(page: Page) {
   const porta = page
     .getByRole("navigation", { name: "Navegação principal" })
-    .getByRole("link", { name: "Tráfego AIOS", exact: true });
+    .getByRole("link", { name: "Tráfego Agêntico", exact: true });
   await expect(porta).toBeVisible({ timeout: 30_000 });
   await porta.click();
   await page.waitForURL(/\/app\/aios$/, { timeout: 30_000 });
   // A URL troca antes de a tela chegar (é página renderizada no servidor): o
   // prazo é o da navegação, não o padrão de 5s de um elemento já carregado.
-  await expect(page.getByRole("heading", { level: 1, name: "Tráfego AIOS" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("heading", { level: 1, name: "Tráfego Agêntico" })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("heading", { level: 2, name: "Estrategista de Tráfego" })).toBeVisible();
 }
 

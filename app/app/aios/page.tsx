@@ -20,7 +20,7 @@ import { requireAuth, resolveActiveOrg } from "@/lib/auth/server";
 import { ROLE_RANK } from "@/lib/auth/types";
 import { traduzir } from "@/lib/i18n/dicionario";
 
-export const metadata = { title: "Tráfego AIOS" };
+export const metadata = { title: "Tráfego Agêntico" };
 export const dynamic = "force-dynamic";
 
 export default async function TrafegoAiosPage() {
@@ -35,7 +35,7 @@ export default async function TrafegoAiosPage() {
   return (
     <div className="flex flex-col gap-6" data-testid="tela-aios">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("Tráfego AIOS")}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("Tráfego Agêntico")}</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
           {t(
             "Peça campanhas de tráfego pago conversando. O pedido vai para o motor de tráfego, que cuida dos anúncios fora do CRM.",

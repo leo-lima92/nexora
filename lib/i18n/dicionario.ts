@@ -18171,8 +18171,8 @@ export const DICIONARIO: Traducoes = {
 
   // FORK NEXORA — Tráfego AIOS: a tela do Estrategista de Tráfego (`components/aios/`)
   // e a rota de despacho (`app/api/v1/aios-dispatch/route.ts`).
-  "Tráfego AIOS": {
-    es: "Tráfico AIOS",
+  "Tráfego Agêntico": {
+    es: "Tráfico Agéntico",
   },
   "Peça campanhas de tráfego pago conversando com o Estrategista de Tráfego.": {
     es: "Pide campañas de tráfico pago conversando con el Estratega de Tráfico.",
